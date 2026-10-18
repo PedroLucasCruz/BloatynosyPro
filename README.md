@@ -1,82 +1,177 @@
 ﻿# ⚡ BloatynosyPro
 
 > **Otimizador Inteligente de Performance, Desempenho e Privacidade para Windows 10 e 11**  
-> Desenvolvido em C# com **.NET 9.0 (Windows Forms Moderno)** com base no motor do Bloatynosy.
+> Construído em C# com **.NET 9.0 (Windows Forms Moderno)** baseado na engenharia reversa do ecossistema Bloatynosy.
 
 ---
 
-## 🚀 Visão Geral
+## ⚡ Como Executar em 1 Clique
 
-**BloatynosyPro** une o catálogo de mais de 1.200 regras de otimização e desinstalação de bloatwares do **Bloatynosy** com uma **interface gráfica moderna (UX Designer Dark/Gamer)** e uma suíte completa de **diagnóstico de hardware e desempenho em tempo real**.
+Basta dar **duplo clique** no arquivo executável ou no script batch na raiz do repositório:
 
-O objetivo é proporcionar máxima velocidade e estabilidade ao computador com **zero esforço mental** para o usuário através da **Otimização Inteligente em 1 Clique**.
+- 🟢 **`Iniciar-BloatynosyPro.bat`** (ou **`run.bat`**)
+  - *Dica:* Para aplicar regras que afetam todo o sistema (`HKLM`) e remover bloatwares nativos com permissão total, clique com o botão direito e selecione **"Executar como Administrador"**.
 
----
-
-## ✨ Principais Funcionalidades
-
-### 1. ⚡ Dashboard & Otimização em 1-Clique
-- **Índice de Saúde do Sistema**: score em tempo real de 0% a 100%.
-- **Botão Mágico "Otimizar Agora (1 Clique)"**: aplica automaticamente as melhores práticas recomendadas de sistema, bloqueia anúncios e descarrega a memória RAM.
-- **Perfis Especializados**:
-  - 🎮 **Modo Gamer**: desativa GameDVR em segundo plano, otimiza throttling e efeitos visuais para ganho de FPS.
-  - 🛡️ **Modo Privacidade**: bloqueia telemetria, biometria e anúncios diagnósticos.
-  - ⚡ **Modo Equilibrado**: focado em estabilidade e rapidez para uso diário.
-
-### 2. 📊 Monitoramento de Hardware em Tempo Real
-- **Memória RAM**: monitoramento contínuo de GBs usados/livres e botão de **Limpeza Imediata de Working Set (`EmptyWorkingSet` via Win32 API)**.
-- **Processador (CPU)**: taxa de utilização do processador e ranking dos processos mais pesados.
-- **Armazenamento (Disco C:)**: espaço livre vs total e detecção de sobrecarga.
-- **Placas de Vídeo (GPU)**: identificação de adaptadores gráficos instalados.
-- **Tráfego de Rede**: taxas de Download e Upload em KB/s.
-
-### 3. 🛡️ Otimizações do Windows (WinRules Engine)
-- Mais de 1.200 regras categorizadas: *Ads*, *AI/Copilot*, *Appearance*, *Edge*, *Gaming*, *Privacy*, *System*, *Taskbar*, *Updates*.
-- Leitura, aplicação e restauração de chaves do Registro (`HKCU` e `HKLM`).
-- Filtro por categorias e seleção automática de itens recomendados.
-
-### 4. 🗑️ Desinstalador de Bloatwares (AppX)
-- Varredura de aplicativos nativos do Windows classificados como **Seguros para Remoção**, **Protegidos do Sistema** e **Pessoais**.
-- Desinstalação em lote via PowerShell.
-
-### 5. 🧹 Limpeza de Disco & Arquivos Temporários
-- Scanner de resíduos do sistema (`%TEMP%`, `Windows\Temp`, `Prefetch` e `CrashDumps`).
-- Liberação imediata de centenas de MBs ou GBs de espaço em disco.
-
-### 6. 🚀 Gerenciador de Inicialização (Startup)
-- Lista de aplicativos configurados no registro de inicialização (`Run` e `Startup Folder`).
-- Desativação rápida de inicializadores desnecessários para acelerar o boot.
-
-### 7. 🌐 Internacionalização (i18n)
-- Idioma padrão: **Português do Brasil (PT-BR)**.
-- Alternador instantâneo para **Inglês (US)** sem necessidade de reiniciar.
-
----
-
-## 🛠️ Tecnologias Utilizadas
-- **Linguagem:** C# 13
-- **Framework:** .NET 9.0-windows (Windows Forms)
-- **APIs:** Win32 Native (`kernel32.dll`, `psapi.dll`), `System.Management` (WMI), `System.Net.NetworkInformation`
-- **Padrão Visual:** Dark Cyber / Fluent (sem flickering, duplo buffer ativado)
-
----
-
-## 📦 Como Compilar e Executar
-
-### Pré-requisitos:
-- Windows 10 ou 11 (64-bit)
-- [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
-
-### Compilação:
-```bash
-git clone https://github.com/PedroLucasCruz/BloatynosyPro.git
-cd BloatynosyPro
-dotnet build -c Release
+Ou abra diretamente o executável já compilado:
+```
+./src/BloatynosyPro/bin/Release/net9.0-windows/BloatynosyPro.exe
 ```
 
-### Executar:
+---
+
+## 🚀 Como Subir e Compilar o Projeto Manualmente
+
+### Pré-requisitos
+- Windows 10 ou 11 (64-bit)
+- [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) instalado
+
+### Pelo Terminal (PowerShell / CMD)
 ```bash
-./src/BloatynosyPro/bin/Release/net9.0-windows/BloatynosyPro.exe
+# 1. Clonar o repositório
+git clone https://github.com/PedroLucasCruz/BloatynosyPro.git
+cd BloatynosyPro
+
+# 2. Restaurar dependências e compilar em Release
+dotnet build -c Release
+
+# 3. Executar o projeto
+dotnet run --project src/BloatynosyPro/BloatynosyPro.csproj -c Release
+```
+
+### Pelo Visual Studio 2022+ / VS Code
+1. Abra o arquivo de solução **`BloatynosyPro.sln`**.
+2. Selecione a configuração **Release** e plataforma **x64**.
+3. Pressione **F5** ou **Ctrl+F5** para executar.
+
+---
+
+## 🧠 Como o BloatynosyPro Funciona
+
+O **BloatynosyPro** foi desenvolvido para resolver o maior problema dos otimizadores tradicionais: **excesso de complexidade técnica que confunde o usuário**. Ele analisa a máquina e aplica as melhores ações de forma automática e segura, sem travamentos.
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                          BloatynosyPro (WinForms)                      │
+│                                                                        │
+│   ┌─────────────────┐   ┌───────────────────┐   ┌──────────────────┐   │
+│   │  WinRules.ini   │   │   AppRules.ini    │   │  Métricas Win32  │   │
+│   │ (1.200+ Regras) │   │  (Classificação)  │   │ (RAM/CPU/GPU/IO) │   │
+│   └────────┬────────┘   └─────────┬─────────┘   └────────┬─────────┘   │
+│            ▼                      ▼                      ▼             │
+│   ┌─────────────────┐   ┌───────────────────┐   ┌──────────────────┐   │
+│   │ WinRulesEngine  │   │   AppxDebloater   │   │  SystemMetrics   │   │
+│   └────────┬────────┘   └─────────┬─────────┘   └────────┬─────────┘   │
+│            └──────────────────────┼──────────────────────┘             │
+│                                   ▼                                    │
+│             ✨ OTIMIZAÇÃO INTELIGENTE EM 1 CLIQUE (Dashboard)         │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## ✨ Módulos e Funcionalidades em Detalhes
+
+### 1. ⚡ Dashboard & Otimização em 1-Clique ("Zero Esforço Mental")
+- **Score de Saúde (0 a 100%)**: Calcula o nível de otimização atual com base no uso de RAM, arquivos temporários acumulados e status das políticas do Windows.
+- **Botão "Otimizar Agora (1 Clique)"**: Aplica automaticamente as configurações recomendadas seguras (bloqueia anúncios no Windows Explorer e Menu Iniciar, desativa telemetria invasiva e descarrega a memória RAM).
+- **Perfis Especializados**:
+  - 🎮 **Modo Gamer**: Desativa o GameDVR em segundo plano, otimiza throttling de energia e reduz animações desnecessárias para garantir mais FPS e zero engasgos (stuttering).
+  - 🛡️ **Modo Privacidade Total**: Desativa o envio de dados diagnósticos, telemetria e identificadores de anúncios da Microsoft.
+  - ⚡ **Modo Equilibrado**: Otimizações do dia a dia mantendo 100% dos recursos funcionais.
+
+### 2. 📊 Monitoramento de Hardware em Tempo Real
+- **Memória RAM**: Exibe o consumo exato em GBs e percentual, com botão de **Limpeza Imediata de Memória (`EmptyWorkingSet` via Win32 API)**, liberando centenas de megabytes de RAM inativa instantaneamente.
+- **Processador (CPU)**: Acompanha a carga de uso geral e exibe a tabela com os **processos que mais consomem processamento e memória**.
+- **Disco do Sistema (C:)**: Mostra o percentual de ocupação e espaço livre em gigabytes.
+- **Placas de Vídeo (GPU)**: Identifica automaticamente adaptadores gráficos dedicados (NVIDIA, AMD) e integrados (Intel).
+- **Tráfego de Rede**: Medição contínua de taxas de Download e Upload em KB/s.
+
+### 3. 🛡️ Otimizações do Windows (Motor WinRules)
+- Catálogo com mais de **1.200 regras** divididas em categorias:
+  - `Ads` (Propagandas no Explorer, Tela de Bloqueio e Configurações).
+  - `AI` (Desativação de recursos invasivos de IA, Copilot e Recall).
+  - `Gaming` (Visual FX, GameDVR, PowerThrottling).
+  - `Privacy` (Telemetria, Diagnósticos, Localização).
+  - `System` (Menu de contexto clássico, serviços redundantes).
+  - `Taskbar` (Widgets, Bing Search no Iniciar, Chat).
+- Permite checar o estado atual de cada regra, aplicar as alterações ou restaurar os padrões do Windows a qualquer momento (*Rollback*).
+
+### 4. 🗑️ Desinstalador de Bloatware (AppX Packages)
+- Varre os aplicativos nativos do Windows usando PowerShell assíncrono.
+- Classificação inteligente baseada no `AppRules.ini`:
+  - 🛡️ **Protegido do Sistema**: Apps vitais (Loja, Instalador de Pacotes) são bloqueados contra remoção acidental.
+  - 🗑️ **Seguro para Remoção**: Bloatwares patrocinados e dispensáveis (BingWeather, Solitaire, TikTok, Clipchamp, etc.).
+  - 👤 **Aplicativos Pessoais**: Identificados para o usuário decidir.
+
+### 5. 🧹 Limpeza de Disco & Arquivos Temporários
+- Analisa diretórios com acúmulo de lixo:
+  - Arquivos temporários do usuário (`%TEMP%`)
+  - Temporários do sistema (`Windows\Temp`)
+  - Cache de pré-inicialização (`Windows\Prefetch`)
+  - Relatórios de falha e despejos de memória (`CrashDumps`)
+- Liberação segura de espaço em disco com 1 clique.
+
+### 6. 🚀 Gerenciador de Inicialização (Startup)
+- Lista programas registrados em `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`, `HKLM` e na pasta de Inicializar.
+- Permite desativar programas desnecessários para acelerar o tempo de boot do computador.
+
+### 7. 🌐 Internacionalização Dinâmica (i18n)
+- Suporte nativo completo a **Português do Brasil (PT-BR)** como idioma padrão.
+- Seletor imediato para **Inglês (EN-US)** na aba de Configurações, trocando todos os textos da interface sem necessidade de reiniciar.
+
+---
+
+## 🎨 Conceito de UX Designer em Windows Forms
+
+Diferente das interfaces tradicionais de WinForms cinzas e estáticas, o **BloatynosyPro** adota padrões modernos de design:
+- **Paleta Dark Cyber / Fluent**: Fundo escuro com alto contraste (`#0f111a`, `#181b2a`, `#242844`), textos nítidos e acentos vibrantes Neon Cyan (`#06b6d4`), Roxo (`#8b5cf6`) e Verde Esmeralda (`#10b981`).
+- **Controles GDI+ Personalizados**: Painéis com cantos arredondados, botões modernos com estados de Hover e Click, e barras de progresso animadas.
+- **Duplo Buffer Ativado**: Renderização suave sem cintilação (*flickering*) na tela.
+- **Navegação Lateral Intuitiva**: Sidebar com ícones e transições instantâneas entre abas.
+
+---
+
+## 📁 Estrutura do Repositório
+
+```
+BloatynosyPro/
+├── Iniciar-BloatynosyPro.bat    # Executável batch de 1 clique
+├── run.bat                     # Atalho de execução rápida
+├── BloatynosyPro.sln           # Solução .NET 9
+├── README.md                   # Documentação completa
+└── src/
+    └── BloatynosyPro/
+        ├── BloatynosyPro.csproj
+        ├── Program.cs          # Ponto de entrada (HighDpiMode PerMonitorV2)
+        ├── app.manifest        # Manifesto com compatibilidade Win 10/11
+        ├── Forms/
+        │   └── MainForm.cs     # Shell principal com Sidebar e navegação
+        ├── Views/
+        │   ├── DashboardView.cs
+        │   ├── PerformanceView.cs
+        │   ├── SystemTweaksView.cs
+        │   ├── BloatwareView.cs
+        │   ├── DiskCleanerView.cs
+        │   ├── StartupManagerView.cs
+        │   └── SettingsView.cs
+        ├── Controls/
+        │   ├── ModernCard.cs
+        │   ├── ModernButton.cs
+        │   └── ModernProgressBar.cs
+        ├── Core/
+        │   ├── WinRulesEngine.cs
+        │   ├── AppxDebloater.cs
+        │   ├── MemoryOptimizer.cs
+        │   ├── SystemMetricsService.cs
+        │   ├── DiskCleanerService.cs
+        │   ├── StartupService.cs
+        │   └── LocalizationService.cs
+        ├── Data/
+        │   ├── WinRules.ini    # 1.277 linhas de regras
+        │   └── AppRules.ini    # Regras de segurança de pacotes
+        └── Localization/
+            ├── pt-BR.json      # Tradução PT-BR
+            └── en.json         # Tradução EN-US
 ```
 
 ---
