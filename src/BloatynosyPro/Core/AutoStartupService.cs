@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Microsoft.Win32;
 
 namespace BloatynosyPro.Core;
@@ -9,6 +9,15 @@ public class AppConfig
     public string StartupPreset { get; set; } = "Balanced"; // Balanced, Gamer, Privacy
     public bool SilentStartup { get; set; } = true;
     public string Language { get; set; } = "pt-BR";
+
+    // Guardiao Automatico (Auto-Pilot em tempo real)
+    public bool AutoGuardianEnabled { get; set; } = true;
+    public bool AutoRamCleanEnabled { get; set; } = true;
+    public bool AutoDiskCleanEnabled { get; set; } = true;
+    public bool AutoServiceBlockEnabled { get; set; } = true;
+    public int RamThresholdPercent { get; set; } = 75;
+    public List<string> BlacklistedServices { get; set; } = new() { "DiagTrack", "dmwappushservice", "MapsBroker", "RetailDemo" };
+    public List<string> BlacklistedProcesses { get; set; } = new() { "CompatTelRunner", "DeviceCensus", "wermgr", "sedlauncher" };
 }
 
 public static class AutoStartupService
@@ -61,6 +70,12 @@ public static class AutoStartupService
         if (!string.IsNullOrEmpty(preset))
             CurrentConfig.StartupPreset = preset;
 
+        SaveConfig();
+    }
+
+    public static void SetGuardian(bool enable)
+    {
+        CurrentConfig.AutoGuardianEnabled = enable;
         SaveConfig();
     }
 

@@ -1,4 +1,4 @@
-﻿using System.Drawing;
+using System.Drawing;
 using System.Windows.Forms;
 using BloatynosyPro.Controls;
 using BloatynosyPro.Core;
@@ -104,6 +104,84 @@ public class SettingsView : UserControl
         flowAuto.Controls.Add(presetPanel);
         cardAutoStart.Controls.Add(flowAuto);
         flow.Controls.Add(cardAutoStart);
+
+        // Auto-Guardian Card
+        var cardGuardian = new ModernCard
+        {
+            Width = 560,
+            Height = 210,
+            BackColor = Color.FromArgb(20, 23, 36),
+            Margin = new Padding(0, 0, 0, 16)
+        };
+
+        var flowGuardian = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false };
+        flowGuardian.Controls.Add(new Label { Text = "🤖 Guardião Automático (Auto-Pilot Inteligente)", Font = new Font("Segoe UI", 11f, FontStyle.Bold), ForeColor = Color.FromArgb(52, 211, 153), AutoSize = true, Margin = new Padding(0, 0, 0, 8) });
+
+        var chkGuardianMain = new CheckBox
+        {
+            Text = "Ativar Guardião em segundo plano (Otimização contínua sem intervenção)",
+            Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
+            ForeColor = Color.White,
+            AutoSize = true,
+            Checked = AutoStartupService.CurrentConfig.AutoGuardianEnabled,
+            Margin = new Padding(0, 0, 0, 6)
+        };
+        chkGuardianMain.CheckedChanged += (s, e) =>
+        {
+            AutoStartupService.SetGuardian(chkGuardianMain.Checked);
+        };
+
+        var chkAutoSvc = new CheckBox
+        {
+            Text = "Derrubar serviços e hospedeiros svchost indesejados automaticamente",
+            Font = new Font("Segoe UI", 9f),
+            ForeColor = Color.FromArgb(203, 213, 225),
+            AutoSize = true,
+            Checked = AutoStartupService.CurrentConfig.AutoServiceBlockEnabled,
+            Margin = new Padding(16, 0, 0, 4)
+        };
+        chkAutoSvc.CheckedChanged += (s, e) =>
+        {
+            AutoStartupService.CurrentConfig.AutoServiceBlockEnabled = chkAutoSvc.Checked;
+            AutoStartupService.SaveConfig();
+        };
+
+        var chkAutoRam = new CheckBox
+        {
+            Text = "Otimizar memória RAM automaticamente ao ultrapassar limite de uso",
+            Font = new Font("Segoe UI", 9f),
+            ForeColor = Color.FromArgb(203, 213, 225),
+            AutoSize = true,
+            Checked = AutoStartupService.CurrentConfig.AutoRamCleanEnabled,
+            Margin = new Padding(16, 0, 0, 4)
+        };
+        chkAutoRam.CheckedChanged += (s, e) =>
+        {
+            AutoStartupService.CurrentConfig.AutoRamCleanEnabled = chkAutoRam.Checked;
+            AutoStartupService.SaveConfig();
+        };
+
+        var chkAutoDisk = new CheckBox
+        {
+            Text = "Limpar arquivos temporários e caches de disco automaticamente",
+            Font = new Font("Segoe UI", 9f),
+            ForeColor = Color.FromArgb(203, 213, 225),
+            AutoSize = true,
+            Checked = AutoStartupService.CurrentConfig.AutoDiskCleanEnabled,
+            Margin = new Padding(16, 0, 0, 4)
+        };
+        chkAutoDisk.CheckedChanged += (s, e) =>
+        {
+            AutoStartupService.CurrentConfig.AutoDiskCleanEnabled = chkAutoDisk.Checked;
+            AutoStartupService.SaveConfig();
+        };
+
+        flowGuardian.Controls.Add(chkGuardianMain);
+        flowGuardian.Controls.Add(chkAutoSvc);
+        flowGuardian.Controls.Add(chkAutoRam);
+        flowGuardian.Controls.Add(chkAutoDisk);
+        cardGuardian.Controls.Add(flowGuardian);
+        flow.Controls.Add(cardGuardian);
 
         // Language Card
         var cardLang = new ModernCard

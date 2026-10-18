@@ -17,6 +17,10 @@ public class DashboardView : UserControl
     private Label _lblDiskStat = null!;
     private Label _lblFeedback = null!;
 
+    private ModernButton _btnToggleGuardian = null!;
+    private Label _lblGuardianStatus = null!;
+    private Label _lblGuardianCounters = null!;
+
     public event Action? NavigateToTweaks;
     public event Action? NavigateToPerformance;
 
@@ -27,6 +31,20 @@ public class DashboardView : UserControl
         Dock = DockStyle.Fill;
         InitializeUi();
         Loc.LanguageChanged += (_, _) => UpdateLanguage();
+
+        AutoGuardianService.OnGuardianAction += msg =>
+        {
+            if (IsHandleCreated)
+            {
+                BeginInvoke(() =>
+                {
+                    _lblFeedback.Text = $"⚡ {msg}";
+                    _lblFeedback.ForeColor = Color.FromArgb(52, 211, 153);
+                    UpdateGuardianLabels();
+                    RefreshMetrics();
+                });
+            }
+        };
     }
 
     private void InitializeUi()
@@ -42,8 +60,8 @@ public class DashboardView : UserControl
             BackColor = Color.FromArgb(15, 17, 26)
         };
         mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 180)); // Card Hero
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 130)); // 3 Stats Cards
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));  // Profiles & Actions
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 125)); // 3 Stats Cards
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));  // Profiles & Auto Guardian
 
         // 1. Hero Card - Score & 1-Click Optimize
         var heroCard = new ModernCard
@@ -51,7 +69,7 @@ public class DashboardView : UserControl
             Dock = DockStyle.Fill,
             BorderColor = Color.FromArgb(46, 51, 77),
             BackColor = Color.FromArgb(24, 27, 44),
-            Margin = new Padding(0, 0, 0, 16)
+            Margin = new Padding(0, 0, 0, 14)
         };
 
         var heroLayout = new TableLayoutPanel
@@ -123,7 +141,7 @@ public class DashboardView : UserControl
         _btnQuickOptimize = new ModernButton
         {
             Text = "✨ Otimizar Agora (1 Clique)",
-            NormalColor = Color.FromArgb(16, 185, 129), // Emerald Green
+            NormalColor = Color.FromArgb(16, 185, 129),
             HoverColor = Color.FromArgb(52, 211, 153),
             PressedColor = Color.FromArgb(5, 150, 105),
             Size = new Size(260, 48),
@@ -153,7 +171,7 @@ public class DashboardView : UserControl
             Dock = DockStyle.Fill,
             ColumnCount = 3,
             RowCount = 1,
-            Margin = new Padding(0, 0, 0, 16)
+            Margin = new Padding(0, 0, 0, 14)
         };
         statsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.33f));
         statsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.33f));
@@ -167,11 +185,22 @@ public class DashboardView : UserControl
         statsRow.Controls.Add(cpuCard, 1, 0);
         statsRow.Controls.Add(diskCard, 2, 0);
 
-        // 3. Profiles Panel
+        // 3. Profiles & Auto-Guardian Row (2 Column Card)
+        var bottomLayout = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            RowCount = 1
+        };
+        bottomLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 55));
+        bottomLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 45));
+
+        // Profiles Card (Left)
         var profilesCard = new ModernCard
         {
             Dock = DockStyle.Fill,
-            BackColor = Color.FromArgb(20, 23, 36)
+            BackColor = Color.FromArgb(20, 23, 36),
+            Margin = new Padding(0, 0, 8, 0)
         };
 
         var profilesFlow = new FlowLayoutPanel
@@ -184,28 +213,28 @@ public class DashboardView : UserControl
 
         var lblProfilesTitle = new Label
         {
-            Text = "🎯 Perfis Especializados de Otimização",
-            Font = new Font("Segoe UI", 13f, FontStyle.Bold),
+            Text = "🎯 Perfis Rápidos de Otimização",
+            Font = new Font("Segoe UI", 12f, FontStyle.Bold),
             ForeColor = Color.White,
             AutoSize = true,
-            Margin = new Padding(0, 0, 0, 12)
+            Margin = new Padding(0, 0, 0, 10)
         };
         profilesFlow.Controls.Add(lblProfilesTitle);
 
         var btnGamer = new ModernButton
         {
-            Text = "🎮 Modo Gamer: Desativar GameDVR e Maximizar FPS",
+            Text = "🎮 Modo Gamer: Maximizar FPS e Reduzir Latência",
             NormalColor = Color.FromArgb(99, 102, 241),
-            Size = new Size(420, 42),
+            Size = new Size(380, 38),
             Margin = new Padding(0, 0, 0, 8)
         };
         btnGamer.Click += (s, e) => ApplyGamerProfile();
 
         var btnPrivacy = new ModernButton
         {
-            Text = "🛡️ Modo Privacidade: Bloquear Telemetria e Diagnóstico",
+            Text = "🛡️ Modo Privacidade: Bloquear Telemetria & Ads",
             NormalColor = Color.FromArgb(79, 70, 229),
-            Size = new Size(420, 42),
+            Size = new Size(380, 38),
             Margin = new Padding(0, 0, 0, 8)
         };
         btnPrivacy.Click += (s, e) => ApplyPrivacyProfile();
@@ -214,12 +243,100 @@ public class DashboardView : UserControl
         profilesFlow.Controls.Add(btnPrivacy);
         profilesCard.Controls.Add(profilesFlow);
 
+        // Auto-Guardian Card (Right)
+        var guardianCard = new ModernCard
+        {
+            Dock = DockStyle.Fill,
+            BackColor = Color.FromArgb(20, 23, 36),
+            Margin = new Padding(8, 0, 0, 0)
+        };
+
+        var guardianFlow = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            FlowDirection = FlowDirection.TopDown,
+            WrapContents = false
+        };
+
+        var lblGuardianTitle = new Label
+        {
+            Text = "🤖 Guardião Automático (Auto-Pilot)",
+            Font = new Font("Segoe UI", 12f, FontStyle.Bold),
+            ForeColor = Color.FromArgb(6, 182, 212),
+            AutoSize = true,
+            Margin = new Padding(0, 0, 0, 6)
+        };
+
+        _lblGuardianStatus = new Label
+        {
+            Text = "Status: 🟢 Ativo (Otimizando em segundo plano)",
+            Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
+            ForeColor = Color.FromArgb(52, 211, 153),
+            AutoSize = true,
+            Margin = new Padding(0, 0, 0, 6)
+        };
+
+        _lblGuardianCounters = new Label
+        {
+            Text = "Derruba processos de telemetria e libera RAM sozinho assim que necessário.",
+            Font = new Font("Segoe UI", 8.5f),
+            ForeColor = Color.FromArgb(148, 163, 184),
+            AutoSize = true,
+            Margin = new Padding(0, 0, 0, 10)
+        };
+
+        _btnToggleGuardian = new ModernButton
+        {
+            Text = "⏸️ Pausar Guardião",
+            NormalColor = Color.FromArgb(245, 158, 11),
+            Size = new Size(200, 36)
+        };
+        _btnToggleGuardian.Click += (s, e) => ToggleGuardian();
+
+        guardianFlow.Controls.Add(lblGuardianTitle);
+        guardianFlow.Controls.Add(_lblGuardianStatus);
+        guardianFlow.Controls.Add(_lblGuardianCounters);
+        guardianFlow.Controls.Add(_btnToggleGuardian);
+        guardianCard.Controls.Add(guardianFlow);
+
+        bottomLayout.Controls.Add(profilesCard, 0, 0);
+        bottomLayout.Controls.Add(guardianCard, 1, 0);
+
         mainLayout.Controls.Add(heroCard, 0, 0);
         mainLayout.Controls.Add(statsRow, 0, 1);
-        mainLayout.Controls.Add(profilesCard, 0, 2);
+        mainLayout.Controls.Add(bottomLayout, 0, 2);
 
         Controls.Add(mainLayout);
         RefreshMetrics();
+        UpdateGuardianLabels();
+    }
+
+    private void ToggleGuardian()
+    {
+        bool newState = !AutoStartupService.CurrentConfig.AutoGuardianEnabled;
+        AutoStartupService.SetGuardian(newState);
+        UpdateGuardianLabels();
+    }
+
+    private void UpdateGuardianLabels()
+    {
+        bool isEnabled = AutoStartupService.CurrentConfig.AutoGuardianEnabled;
+        if (isEnabled)
+        {
+            _lblGuardianStatus.Text = "Status: 🟢 Ativo (Otimizando sozinho)";
+            _lblGuardianStatus.ForeColor = Color.FromArgb(52, 211, 153);
+            _btnToggleGuardian.Text = "⏸️ Pausar Guardião";
+            _btnToggleGuardian.NormalColor = Color.FromArgb(245, 158, 11);
+        }
+        else
+        {
+            _lblGuardianStatus.Text = "Status: ⚪ Pausado (Otimização manual)";
+            _lblGuardianStatus.ForeColor = Color.FromArgb(148, 163, 184);
+            _btnToggleGuardian.Text = "▶️ Ativar Guardião";
+            _btnToggleGuardian.NormalColor = Color.FromArgb(16, 185, 129);
+        }
+
+        _lblGuardianCounters.Text = $"Bloqueios automáticos: {AutoGuardianService.TotalBlockedCount} | Otimizações de RAM: {AutoGuardianService.TotalRamOptimizations}";
     }
 
     private ModernCard CreateMetricCard(string title, out Label statLabel, Color accent)
@@ -242,16 +359,16 @@ public class DashboardView : UserControl
         var lblTitle = new Label
         {
             Text = title,
-            Font = new Font("Segoe UI", 10.5f, FontStyle.Bold),
+            Font = new Font("Segoe UI", 10f, FontStyle.Bold),
             ForeColor = accent,
             AutoSize = true,
-            Margin = new Padding(0, 0, 0, 6)
+            Margin = new Padding(0, 0, 0, 4)
         };
 
         statLabel = new Label
         {
             Text = "Carregando...",
-            Font = new Font("Segoe UI", 13f, FontStyle.Bold),
+            Font = new Font("Segoe UI", 12f, FontStyle.Bold),
             ForeColor = Color.White,
             AutoSize = true
         };
@@ -265,7 +382,7 @@ public class DashboardView : UserControl
     public void RefreshMetrics()
     {
         var snapshot = SystemMetricsService.GetSnapshot();
-        _lblRamStat.Text = $"{snapshot.Memory.UsedGb:F1} GB usados / {snapshot.Memory.TotalGb:F1} GB ({snapshot.Memory.UsagePercent}%)";
+        _lblRamStat.Text = $"{snapshot.Memory.UsedGb:F1} GB ({snapshot.Memory.UsagePercent}%)";
         _lblCpuStat.Text = $"{snapshot.CpuUsagePercent}% em uso";
 
         var cDrive = snapshot.Disks.FirstOrDefault(d => d.Name.StartsWith("C", StringComparison.OrdinalIgnoreCase));
@@ -281,7 +398,6 @@ public class DashboardView : UserControl
         _lblFeedback.Text = "Otimizando regras e memória RAM...";
         _lblFeedback.ForeColor = Color.FromArgb(6, 182, 212);
 
-        // 1. Aplicar regras recomendadas
         await Task.Run(() =>
         {
             if (WinRulesEngine.Rules.Count == 0)
@@ -295,7 +411,6 @@ public class DashboardView : UserControl
             }
         });
 
-        // 2. Limpar RAM
         long freedRam = await MemoryOptimizer.CleanWorkingSetAsync();
         double freedMb = freedRam / (1024.0 * 1024.0);
 

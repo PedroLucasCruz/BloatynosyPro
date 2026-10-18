@@ -77,14 +77,20 @@ O **BloatynosyPro** foi desenvolvido para resolver o maior problema dos otimizad
   - 🛡️ **Modo Privacidade Total**: Desativa o envio de dados diagnósticos, telemetria e identificadores de anúncios da Microsoft.
   - ⚡ **Modo Equilibrado**: Otimizações do dia a dia mantendo 100% dos recursos funcionais.
 
-### 2. 🔥 Otimizador de Processos em Detalhes (Task Manager Details / PIDs)
-- **Visão Semelhante à aba Detalhes do Gerenciador de Tarefas**: Lista todos os PIDs ativos, uso real de memória RAM e classificação de segurança.
-- **Diferenciação Inteligente**:
-  - 🛡️ **Processos Críticos do Sistema**: `csrss`, `lsass`, `winlogon`, `explorer` e instâncias essenciais de `svchost.exe` são protegidos contra encerramento.
-  - ⚠️ **Processos Prejudiciais / Telemetria**: `CompatTelRunner`, `DeviceCensus`, `wermgr`, `MicrosoftEdgeUpdate`, `GoogleUpdate`, gravação em segundo plano do Xbox Game Bar e bloatwares ativos.
-- **Botão "⚡ Otimizar Processos com 1 Clique"**: Encerra processos prejudiciais de telemetria e atualizadores ociosos, e descarrega a memória de trabalho de instâncias secundárias do `svchost.exe` com segurança total!
+### 2. 🤖 Guardião Automático em Tempo Real (Auto-Pilot / Zero Esforço)
+- **Otimização Contínua e Silenciosa**: O usuário não precisa ficar abrindo o programa e clicando em "Otimizar". O Guardião opera em segundo plano na bandeja do sistema (System Tray).
+- **Intercepção de Bloqueio Imediato**: Sempre que um serviço ou processo indesejado da sua lista negra tentar subir no Windows, o Guardião derruba na hora.
+- **Auto-Descarregamento de Memória RAM**: Quando o consumo de RAM atinge níveis altos (acima de 75%), o Guardião descarrega automaticamente as páginas de trabalho ociosas, mantendo o Windows sempre fluido e responsivo.
+- **Controle com 1 Clique**: Um interruptor destacado no Dashboard permite ativar ou pausar o Guardião instantaneamente.
 
-### 3. 🚀 Inicialização com o Windows & Preset Configurável
+### 3. 🔥 Otimizador de Processos & Inspetor de Hospedeiros (`svchost.exe`)
+- **Raio-X de Hospedeiros de Serviços Nativos**: O sistema inspeciona dentro de cada PID de `svchost.exe` para listar quais serviços do Windows estão rodando dentro dele (ex: `DiagTrack`, `dmwappushservice`, `MapsBroker`, `PcaSvc`, `WerSvc`, `RetailDemo`).
+- **Classificação Inteligente**: Separa hospedeiros que contêm serviços indesejados daqueles que contêm serviços vitais do sistema (Rede, Áudio, RPC).
+- **Derrubada com Bloqueio Permanente**:
+  - Ao derrubar um hospedeiro indesejado, o sistema não apenas encerra o PID atual, mas **desativa permanentemente a inicialização do serviço no Windows (`sc config <serviço> start= disabled`)**, garantindo que ele **nunca mais inicie** consumindo memória, PIDs ou CPU.
+  - Lista negra persistente sincronizada automaticamente no `Config.json`.
+
+### 4. 🚀 Inicialização com o Windows & Preset Configurável
 - **Auto-Otimização no Boot**: Opção de ativar o BloatynosyPro para iniciar com o Windows em segundo plano (minimizando na bandeja/System Tray).
 - **Preset Selecionável**: O usuário escolhe se no boot deve aplicar o *Modo Equilibrado*, *Modo Gamer* ou *Modo Privacidade*.
 - **Ativação/Desativação com 1 Clique**: Configuração simples e reversível a qualquer momento na aba de Configurações.
@@ -167,6 +173,8 @@ BloatynosyPro/
         ├── Views/
         │   ├── DashboardView.cs
         │   ├── PerformanceView.cs
+        │   ├── ProcessOptimizerView.cs
+        │   ├── SystemIntegrityView.cs
         │   ├── SystemTweaksView.cs
         │   ├── BloatwareView.cs
         │   ├── DiskCleanerView.cs
@@ -179,7 +187,13 @@ BloatynosyPro/
         ├── Core/
         │   ├── WinRulesEngine.cs
         │   ├── AppxDebloater.cs
+        │   ├── DeepUninstallService.cs
+        │   ├── SystemIntegrityService.cs
+        │   ├── SvchostInspectorService.cs
+        │   ├── AutoGuardianService.cs
+        │   ├── AutoStartupService.cs
         │   ├── MemoryOptimizer.cs
+        │   ├── ProcessOptimizerService.cs
         │   ├── SystemMetricsService.cs
         │   ├── DiskCleanerService.cs
         │   ├── StartupService.cs
