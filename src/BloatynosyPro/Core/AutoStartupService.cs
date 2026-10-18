@@ -122,6 +122,61 @@ public static class AutoStartupService
         }
     }
 
+    public static void RemoveBlacklistedService(string serviceName, bool reenableInWindows = true)
+    {
+        if (string.IsNullOrWhiteSpace(serviceName)) return;
+        int removed = CurrentConfig.BlacklistedServices.RemoveAll(s => s.Equals(serviceName, StringComparison.OrdinalIgnoreCase));
+        if (removed > 0)
+        {
+            if (reenableInWindows)
+            {
+                try
+                {
+                    var psi = new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = "cmd.exe",
+                        Arguments = $"/c sc config \"{serviceName}\" start= demand",
+                        CreateNoWindow = true,
+                        UseShellExecute = false
+                    };
+                    using var proc = System.Diagnostics.Process.Start(psi);
+                    proc?.WaitForExit(3000);
+                }
+                catch { }
+            }
+            SaveConfig();
+        }
+    }
+
+    public static void RemoveBlacklistedProcess(string processName)
+    {
+        if (string.IsNullOrWhiteSpace(processName)) return;
+        string cleanName = processName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
+            ? processName[..^4]
+            : processName;
+
+        int removed = CurrentConfig.BlacklistedProcesses.RemoveAll(p => p.Equals(cleanName, StringComparison.OrdinalIgnoreCase));
+        if (removed > 0)
+        {
+            SaveConfig();
+        }
+    }
+
+    public static bool IsProcessBlacklisted(string processName)
+    {
+        if (string.IsNullOrWhiteSpace(processName)) return false;
+        string cleanName = processName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
+            ? processName[..^4]
+            : processName;
+        return CurrentConfig.BlacklistedProcesses.Contains(cleanName, StringComparer.OrdinalIgnoreCase);
+    }
+
+    public static bool IsServiceBlacklisted(string serviceName)
+    {
+        if (string.IsNullOrWhiteSpace(serviceName)) return false;
+        return CurrentConfig.BlacklistedServices.Contains(serviceName, StringComparer.OrdinalIgnoreCase);
+    }
+
     private static bool IsRunKeyConfigured()
     {
         try

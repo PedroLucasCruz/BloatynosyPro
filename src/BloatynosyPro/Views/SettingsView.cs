@@ -109,7 +109,7 @@ public class SettingsView : UserControl
         var cardGuardian = new ModernCard
         {
             Width = 560,
-            Height = 250,
+            Height = 295,
             BackColor = Color.FromArgb(20, 23, 36),
             Margin = new Padding(0, 0, 0, 16)
         };
@@ -191,11 +191,25 @@ public class SettingsView : UserControl
             AutoStartupService.SaveConfig();
         };
 
+        var btnManageBlacklist = new ModernButton
+        {
+            Text = "📋 Gerenciar Lista Negra (Ver / Remover Processos e Serviços)",
+            NormalColor = Color.FromArgb(79, 70, 229),
+            Size = new Size(520, 34),
+            Margin = new Padding(16, 8, 0, 0)
+        };
+        btnManageBlacklist.Click += (s, e) =>
+        {
+            using var dlg = new Forms.BlacklistManagerForm();
+            dlg.ShowDialog(this);
+        };
+
         flowGuardian.Controls.Add(chkGuardianMain);
         flowGuardian.Controls.Add(chkAutoSvc);
         flowGuardian.Controls.Add(chkAutoRam);
         flowGuardian.Controls.Add(chkAutoDisk);
         flowGuardian.Controls.Add(chkAutoIntegrity);
+        flowGuardian.Controls.Add(btnManageBlacklist);
         cardGuardian.Controls.Add(flowGuardian);
         flow.Controls.Add(cardGuardian);
 

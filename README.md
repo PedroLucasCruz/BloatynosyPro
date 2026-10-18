@@ -93,6 +93,11 @@ O **BloatynosyPro** foi desenvolvido para resolver o maior problema dos otimizad
   - Ao derrubar um hospedeiro `svchost.exe` indesejado, o sistema não apenas encerra o PID atual, mas **desativa permanentemente a inicialização do serviço no Windows (`sc config <serviço> start= disabled`)** e registra na lista negra do Guardião para ser derrubado preventivamente.
   - Ao finalizar qualquer outro processo indesejado pelo usuário, o nome é automaticamente registrado no Guardião para nunca mais consumir recursos da máquina.
   - Lista negra persistente sincronizada automaticamente no `Config.json`.
+- **📋 Gerenciador Visual da Lista Negra do Guardião**:
+  - Interface dedicada para **visualizar, adicionar e remover processos e serviços cadastrados na lista negra**.
+  - Permite desbloquear qualquer processo com 1 clique.
+  - Ao desbloquear um serviço nativo do Windows, ele é **automaticamente reativado no sistema operacional (`sc config <serviço> start= demand`)**.
+  - Acesso direto pelo Otimizador de Processos e pela aba de Configurações.
 
 ### 4. 🚀 Inicialização com o Windows & Preset Configurável
 - **Auto-Otimização no Boot**: Opção de ativar o BloatynosyPro para iniciar com o Windows em segundo plano (minimizando na bandeja/System Tray).
