@@ -3,6 +3,7 @@ bin/
 obj/
 Executavel/
 publish/
+Instalador/Arquivos/
 *.user
 *.suo
 *.userosscache

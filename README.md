@@ -5,11 +5,13 @@
 
 ---
 
-## ⚡ Como Executar e Gerar o Executável em 1 Clique
+## ⚡ Assistente Instalador e Execução Rápida
 
-Na raiz do projeto existem scripts práticos para você:
+Na raiz do projeto existem scripts práticos para você e para o usuário final:
 
-- 🛠️ **`Gerar-Executavel.bat`**: Compila e publica a versão **Release de alta performance (sem debugger)** diretamente na pasta `Executavel\BloatynosyPro.exe`. É a versão mais rápida e leve!
+- 📦 **`Instalar-BloatynosyPro.bat`**: **Assistente de Instalação Autônomo**. Não exige que o usuário tenha .NET SDK ou runtime instalado. Ele instala no diretório `%LocalAppData%\Programs\BloatynosyPro`, cria o atalho oficial na **Área de Trabalho** e no **Menu Iniciar**!
+- 🛠️ **`Gerar-Instalador.bat`**: Compila a distribuição **Self-Contained (Zero SDK)** onde todo o runtime .NET 9 fica embutido no `.exe`.
+- 🚀 **`Gerar-Executavel.bat`**: Compila e publica a versão **Release de alta performance (sem debugger)** diretamente na pasta `Executavel\BloatynosyPro.exe`.
 - 🟢 **`Iniciar-BloatynosyPro.bat`** (ou **`run.bat`**): Inicia a aplicação instantaneamente. Se ainda não tiver sido compilada, ele gera e abre automaticamente.
   - *Dica:* Para aplicar regras que afetam todo o sistema (`HKLM`) e remover bloatwares nativos com permissão total, clique com o botão direito e selecione **"Executar como Administrador"**.
 
@@ -75,14 +77,26 @@ O **BloatynosyPro** foi desenvolvido para resolver o maior problema dos otimizad
   - 🛡️ **Modo Privacidade Total**: Desativa o envio de dados diagnósticos, telemetria e identificadores de anúncios da Microsoft.
   - ⚡ **Modo Equilibrado**: Otimizações do dia a dia mantendo 100% dos recursos funcionais.
 
-### 2. 📊 Monitoramento de Hardware em Tempo Real
+### 2. 🔥 Otimizador de Processos em Detalhes (Task Manager Details / PIDs)
+- **Visão Semelhante à aba Detalhes do Gerenciador de Tarefas**: Lista todos os PIDs ativos, uso real de memória RAM e classificação de segurança.
+- **Diferenciação Inteligente**:
+  - 🛡️ **Processos Críticos do Sistema**: `csrss`, `lsass`, `winlogon`, `explorer` e instâncias essenciais de `svchost.exe` são protegidos contra encerramento.
+  - ⚠️ **Processos Prejudiciais / Telemetria**: `CompatTelRunner`, `DeviceCensus`, `wermgr`, `MicrosoftEdgeUpdate`, `GoogleUpdate`, gravação em segundo plano do Xbox Game Bar e bloatwares ativos.
+- **Botão "⚡ Otimizar Processos com 1 Clique"**: Encerra processos prejudiciais de telemetria e atualizadores ociosos, e descarrega a memória de trabalho de instâncias secundárias do `svchost.exe` com segurança total!
+
+### 3. 🚀 Inicialização com o Windows & Preset Configurável
+- **Auto-Otimização no Boot**: Opção de ativar o BloatynosyPro para iniciar com o Windows em segundo plano (minimizando na bandeja/System Tray).
+- **Preset Selecionável**: O usuário escolhe se no boot deve aplicar o *Modo Equilibrado*, *Modo Gamer* ou *Modo Privacidade*.
+- **Ativação/Desativação com 1 Clique**: Configuração simples e reversível a qualquer momento na aba de Configurações.
+
+### 4. 📊 Monitoramento de Hardware em Tempo Real
 - **Memória RAM**: Exibe o consumo exato em GBs e percentual, com botão de **Limpeza Imediata de Memória (`EmptyWorkingSet` via Win32 API)**, liberando centenas de megabytes de RAM inativa instantaneamente.
 - **Processador (CPU)**: Acompanha a carga de uso geral e exibe a tabela com os **processos que mais consomem processamento e memória**.
 - **Disco do Sistema (C:)**: Mostra o percentual de ocupação e espaço livre em gigabytes.
 - **Placas de Vídeo (GPU)**: Identifica automaticamente adaptadores gráficos dedicados (NVIDIA, AMD) e integrados (Intel).
 - **Tráfego de Rede**: Medição contínua de taxas de Download e Upload em KB/s.
 
-### 3. 🛡️ Otimizações do Windows (Motor WinRules)
+### 5. 🛡️ Otimizações do Windows (Motor WinRules)
 - Catálogo com mais de **1.200 regras** divididas em categorias:
   - `Ads` (Propagandas no Explorer, Tela de Bloqueio e Configurações).
   - `AI` (Desativação de recursos invasivos de IA, Copilot e Recall).

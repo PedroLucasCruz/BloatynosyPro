@@ -8,6 +8,8 @@ namespace BloatynosyPro.Views;
 public class SettingsView : UserControl
 {
     private ComboBox _cbLanguage = null!;
+    private CheckBox _chkAutoStart = null!;
+    private ComboBox _cbPreset = null!;
     private Label _lblOsInfo = null!;
 
     public SettingsView()
@@ -39,7 +41,7 @@ public class SettingsView : UserControl
 
         var lblTitle = new Label
         {
-            Text = "⚙️ Configurações & Sobre",
+            Text = "⚙️ Configurações do Sistema & Inicialização",
             Font = new Font("Segoe UI", 14f, FontStyle.Bold),
             ForeColor = Color.White,
             AutoSize = true,
@@ -47,10 +49,66 @@ public class SettingsView : UserControl
         };
         flow.Controls.Add(lblTitle);
 
+        // AutoStart & Preset Card
+        var cardAutoStart = new ModernCard
+        {
+            Width = 560,
+            Height = 160,
+            BackColor = Color.FromArgb(20, 23, 36),
+            Margin = new Padding(0, 0, 0, 16)
+        };
+
+        var flowAuto = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false };
+        flowAuto.Controls.Add(new Label { Text = "🚀 Inicialização Automática com o Windows", Font = new Font("Segoe UI", 11f, FontStyle.Bold), ForeColor = Color.FromArgb(6, 182, 212), AutoSize = true, Margin = new Padding(0, 0, 0, 8) });
+
+        _chkAutoStart = new CheckBox
+        {
+            Text = "Disparar otimização do computador automaticamente ao ligar o Windows",
+            Font = new Font("Segoe UI", 10f),
+            ForeColor = Color.White,
+            AutoSize = true,
+            Checked = AutoStartupService.CurrentConfig.AutoStartWithWindows,
+            Margin = new Padding(0, 0, 0, 10)
+        };
+        _chkAutoStart.CheckedChanged += (s, e) =>
+        {
+            AutoStartupService.SetAutoStart(_chkAutoStart.Checked, _cbPreset.SelectedItem?.ToString());
+        };
+
+        var presetPanel = new FlowLayoutPanel { FlowDirection = FlowDirection.LeftToRight, AutoSize = true, Margin = new Padding(0) };
+        presetPanel.Controls.Add(new Label { Text = "Preset Automático:", Font = new Font("Segoe UI", 9.5f), ForeColor = Color.FromArgb(203, 213, 225), AutoSize = true, Margin = new Padding(0, 4, 10, 0) });
+
+        _cbPreset = new ComboBox
+        {
+            DropDownStyle = ComboBoxStyle.DropDownList,
+            BackColor = Color.FromArgb(28, 32, 52),
+            ForeColor = Color.White,
+            Font = new Font("Segoe UI", 9.5f),
+            Width = 220
+        };
+        _cbPreset.Items.Add("Modo Equilibrado (Padrão)");
+        _cbPreset.Items.Add("Modo Gamer (Máximo FPS)");
+        _cbPreset.Items.Add("Modo Privacidade Total");
+
+        string currentPreset = AutoStartupService.CurrentConfig.StartupPreset;
+        _cbPreset.SelectedIndex = currentPreset.Contains("Gamer", StringComparison.OrdinalIgnoreCase) ? 1 :
+                                 (currentPreset.Contains("Privacy", StringComparison.OrdinalIgnoreCase) || currentPreset.Contains("Privacidade", StringComparison.OrdinalIgnoreCase)) ? 2 : 0;
+
+        _cbPreset.SelectedIndexChanged += (s, e) =>
+        {
+            AutoStartupService.SetAutoStart(_chkAutoStart.Checked, _cbPreset.SelectedItem?.ToString());
+        };
+
+        presetPanel.Controls.Add(_cbPreset);
+        flowAuto.Controls.Add(_chkAutoStart);
+        flowAuto.Controls.Add(presetPanel);
+        cardAutoStart.Controls.Add(flowAuto);
+        flow.Controls.Add(cardAutoStart);
+
         // Language Card
         var cardLang = new ModernCard
         {
-            Width = 520,
+            Width = 560,
             Height = 110,
             BackColor = Color.FromArgb(20, 23, 36),
             Margin = new Padding(0, 0, 0, 16)
@@ -83,7 +141,7 @@ public class SettingsView : UserControl
         // System Info Card
         var cardInfo = new ModernCard
         {
-            Width = 520,
+            Width = 560,
             Height = 180,
             BackColor = Color.FromArgb(20, 23, 36),
             Margin = new Padding(0, 0, 0, 16)
@@ -111,7 +169,7 @@ public class SettingsView : UserControl
         // About Card
         var cardAbout = new ModernCard
         {
-            Width = 520,
+            Width = 560,
             Height = 140,
             BackColor = Color.FromArgb(20, 23, 36)
         };
