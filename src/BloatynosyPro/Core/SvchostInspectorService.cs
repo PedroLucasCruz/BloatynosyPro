@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Management;
 
 namespace BloatynosyPro.Core;
@@ -30,9 +30,18 @@ public static class SvchostInspectorService
         { "XblAuthManager", "Gerenciador de Autenticacao do Xbox Live" },
         { "XblGameSave", "Servico de Salvamento de Jogos do Xbox Live" },
         { "XboxNetApiSvc", "Servico de Rede do Xbox Live" },
+        { "XboxGipSvc", "Servico de Gerenciamento de Acessorios Xbox" },
         { "WMPNetworkSvc", "Compartilhamento de Rede do Windows Media Player" },
         { "RemoteRegistry", "Registro Remoto do Windows" },
-        { "SharedAccess", "Compartilhamento de Conexao com a Internet (ICS)" }
+        { "SharedAccess", "Compartilhamento de Conexao com a Internet (ICS)" },
+        { "diagnosticshost", "Hospedeiro do Servico de Diagnostico" },
+        { "DPS", "Servico de Politicas de Diagnostico" },
+        { "WdiServiceHost", "Hospedeiro de Servico de Diagnostico WDI" },
+        { "WdiSystemHost", "Hospedeiro do Sistema de Diagnostico WDI" },
+        { "TroubleshootingSvc", "Servico de Solucao de Problemas Recomendada" },
+        { "lfsvc", "Servico de Geolocalizacao em Segundo Plano" },
+        { "SensorService", "Servico de Sensores em Segundo Plano" },
+        { "SensrSvc", "Servico de Monitoramento de Sensores" }
     };
 
     public static List<SvchostGroupItem> InspectSvchostInstances()
@@ -71,7 +80,9 @@ public static class SvchostInspectorService
                     string desc = obj["Description"]?.ToString() ?? "";
                     string mode = obj["StartMode"]?.ToString() ?? "Auto";
 
-                    bool isUnwanted = _unwantedServices.ContainsKey(name);
+                    bool isUnwanted = _unwantedServices.ContainsKey(name) ||
+                                      AutoStartupService.CurrentConfig.BlacklistedServices.Contains(name, StringComparer.OrdinalIgnoreCase);
+
                     item.Services.Add(new WindowsServiceInfo(name, disp, desc, isUnwanted, mode));
                 }
             }
@@ -91,12 +102,8 @@ public static class SvchostInspectorService
                 RunCmd($"sc config \"{serviceName}\" start= disabled");
                 RunCmd($"sc stop \"{serviceName}\"");
 
-                // 2. Registra na lista negra persistente
-                if (!AutoStartupService.CurrentConfig.BlacklistedServices.Contains(serviceName, StringComparer.OrdinalIgnoreCase))
-                {
-                    AutoStartupService.CurrentConfig.BlacklistedServices.Add(serviceName);
-                    AutoStartupService.SaveConfig();
-                }
+                // 2. Registra na lista negra persistente do Guardiao
+                AutoStartupService.AddBlacklistedService(serviceName);
 
                 // 3. Se for seguro, finaliza o processo hospedeiro
                 try
@@ -118,12 +125,109 @@ public static class SvchostInspectorService
         });
     }
 
+    public static async Task<bool> KillAndBlacklistSvchostAsync(int pid)
+    {
+        return await Task.Run(() =>
+        {
+            try
+            {
+                var services = GetServicesForPid(pid);
+                foreach (var svc in services)
+                {
+                    RunCmd($"sc config \"{svc.Name}\" start= disabled");
+                    RunCmd($"sc stop \"{svc.Name}\"");
+                    AutoStartupService.AddBlacklistedService(svc.Name);
+                }
+
+                try
+                {
+                    var p = Process.GetProcessById(pid);
+                    if (!p.HasExited)
+                    {
+                        p.Kill();
+                    }
+                }
+                catch { }
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        });
+    }
+
+    public static List<WindowsServiceInfo> GetServicesForPid(int pid)
+    {
+        var list = new List<WindowsServiceInfo>();
+        try
+        {
+            using var searcher = new ManagementObjectSearcher($"SELECT ProcessId, Name, DisplayName, Description, StartMode FROM Win32_Service WHERE ProcessId = {pid}");
+            foreach (ManagementObject obj in searcher.Get())
+            {
+                string name = obj["Name"]?.ToString() ?? "";
+                string disp = obj["DisplayName"]?.ToString() ?? name;
+                string desc = obj["Description"]?.ToString() ?? "";
+                string mode = obj["StartMode"]?.ToString() ?? "Auto";
+
+                bool isUnwanted = _unwantedServices.ContainsKey(name) ||
+                                  AutoStartupService.CurrentConfig.BlacklistedServices.Contains(name, StringComparer.OrdinalIgnoreCase);
+
+                list.Add(new WindowsServiceInfo(name, disp, desc, isUnwanted, mode));
+            }
+        }
+        catch { }
+        return list;
+    }
+
+    public static async Task<int> AutoDetectAndKillUnwantedSvchostAsync()
+    {
+        return await Task.Run(() =>
+        {
+            int killedCount = 0;
+            var groups = InspectSvchostInstances();
+
+            foreach (var group in groups)
+            {
+                if (group.HasUnwantedServices)
+                {
+                    foreach (var svc in group.Services.Where(s => s.IsUnwanted))
+                    {
+                        RunCmd($"sc stop \"{svc.Name}\"");
+                        RunCmd($"sc config \"{svc.Name}\" start= disabled");
+                        AutoStartupService.AddBlacklistedService(svc.Name);
+                    }
+
+                    // Se nao tem servicos criticos do sistema necessarios ou se tem servicos indesejados, derruba o PID
+                    try
+                    {
+                        var p = Process.GetProcessById(group.Pid);
+                        if (!p.HasExited)
+                        {
+                            p.Kill();
+                            killedCount++;
+                        }
+                    }
+                    catch { }
+                }
+            }
+
+            return killedCount;
+        });
+    }
+
     public static async Task<int> EnforceBlacklistAsync()
     {
         return await Task.Run(() =>
         {
             int stopped = 0;
-            var blacklisted = AutoStartupService.CurrentConfig.BlacklistedServices;
+            var blacklisted = new HashSet<string>(AutoStartupService.CurrentConfig.BlacklistedServices, StringComparer.OrdinalIgnoreCase);
+            foreach (var key in _unwantedServices.Keys)
+            {
+                blacklisted.Add(key);
+            }
+
             if (blacklisted.Count == 0) return 0;
 
             try
@@ -134,10 +238,12 @@ public static class SvchostInspectorService
                     string name = obj["Name"]?.ToString() ?? "";
                     int pid = Convert.ToInt32(obj["ProcessId"]);
 
-                    if (blacklisted.Contains(name, StringComparer.OrdinalIgnoreCase))
+                    if (blacklisted.Contains(name))
                     {
                         RunCmd($"sc stop \"{name}\"");
                         RunCmd($"sc config \"{name}\" start= disabled");
+                        AutoStartupService.AddBlacklistedService(name);
+
                         try
                         {
                             var p = Process.GetProcessById(pid);

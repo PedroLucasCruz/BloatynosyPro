@@ -1,4 +1,4 @@
-﻿using System.Drawing;
+using System.Drawing;
 using System.Windows.Forms;
 using BloatynosyPro.Controls;
 using BloatynosyPro.Core;
@@ -309,6 +309,13 @@ public class DashboardView : UserControl
         Controls.Add(mainLayout);
         RefreshMetrics();
         UpdateGuardianLabels();
+        AutoGuardianService.OnGuardianAction += _ =>
+        {
+            if (IsHandleCreated)
+            {
+                try { BeginInvoke(new Action(UpdateGuardianLabels)); } catch { }
+            }
+        };
     }
 
     private void ToggleGuardian()
@@ -323,7 +330,7 @@ public class DashboardView : UserControl
         bool isEnabled = AutoStartupService.CurrentConfig.AutoGuardianEnabled;
         if (isEnabled)
         {
-            _lblGuardianStatus.Text = "Status: 🟢 Ativo (Otimizando sozinho)";
+            _lblGuardianStatus.Text = "Status: 🟢 Ativo (Auto-Pilot em tempo real)";
             _lblGuardianStatus.ForeColor = Color.FromArgb(52, 211, 153);
             _btnToggleGuardian.Text = "⏸️ Pausar Guardião";
             _btnToggleGuardian.NormalColor = Color.FromArgb(245, 158, 11);
@@ -336,7 +343,7 @@ public class DashboardView : UserControl
             _btnToggleGuardian.NormalColor = Color.FromArgb(16, 185, 129);
         }
 
-        _lblGuardianCounters.Text = $"Bloqueios automáticos: {AutoGuardianService.TotalBlockedCount} | Otimizações de RAM: {AutoGuardianService.TotalRamOptimizations}";
+        _lblGuardianCounters.Text = $"🛡️ Bloqueios: {AutoGuardianService.TotalBlockedCount}  |  🧠 RAM: {AutoGuardianService.TotalRamOptimizations}  |  🧹 Disco: {AutoGuardianService.TotalDiskCleanups}  |  🛠️ Reparos: {AutoGuardianService.TotalIntegrityRepairs}";
     }
 
     private ModernCard CreateMetricCard(string title, out Label statLabel, Color accent)

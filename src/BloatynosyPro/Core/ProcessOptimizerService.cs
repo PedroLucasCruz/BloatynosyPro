@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace BloatynosyPro.Core;
@@ -151,6 +151,7 @@ public static class ProcessOptimizerService
                     {
                         // Processo prejudicial de telemetria / atualizador ocioso: finaliza com seguranca
                         p.Kill();
+                        AutoStartupService.AddBlacklistedProcess(name);
                         terminated++;
                         continue;
                     }
@@ -184,6 +185,59 @@ public static class ProcessOptimizerService
             if (freedMb < 0) freedMb = 180; // Estimativa conservadora de recuperacao
 
             return new ProcessOptimizationResult(terminated, trimmed, freedMb);
+        });
+    }
+
+    public static async Task<bool> KillAndBlacklistProcessAsync(int pid, string processName)
+    {
+        return await Task.Run(async () =>
+        {
+            try
+            {
+                if (processName.Equals("svchost", StringComparison.OrdinalIgnoreCase) ||
+                    processName.Equals("svchost.exe", StringComparison.OrdinalIgnoreCase))
+                {
+                    return await SvchostInspectorService.KillAndBlacklistSvchostAsync(pid);
+                }
+
+                // Finaliza o processo por PID
+                try
+                {
+                    var proc = Process.GetProcessById(pid);
+                    if (!proc.HasExited)
+                    {
+                        proc.Kill();
+                    }
+                }
+                catch { }
+
+                // Registra o nome do processo na lista negra persistente do Guardiao
+                AutoStartupService.AddBlacklistedProcess(processName);
+
+                // Finaliza quaisquer outras instancias ativas do mesmo processo indesejado
+                string cleanName = processName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
+                    ? processName[..^4]
+                    : processName;
+
+                foreach (var p in Process.GetProcessesByName(cleanName))
+                {
+                    try
+                    {
+                        if (!p.HasExited)
+                        {
+                            p.Kill();
+                        }
+                    }
+                    catch { }
+                    finally { p.Dispose(); }
+                }
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         });
     }
 }

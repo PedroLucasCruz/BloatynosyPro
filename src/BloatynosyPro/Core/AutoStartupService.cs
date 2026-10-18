@@ -13,11 +13,29 @@ public class AppConfig
     // Guardiao Automatico (Auto-Pilot em tempo real)
     public bool AutoGuardianEnabled { get; set; } = true;
     public bool AutoRamCleanEnabled { get; set; } = true;
+    public int AutoRamCleanIntervalSeconds { get; set; } = 30;
     public bool AutoDiskCleanEnabled { get; set; } = true;
+    public int AutoDiskCleanIntervalSeconds { get; set; } = 120;
     public bool AutoServiceBlockEnabled { get; set; } = true;
+    public bool AutoIntegrityCheckEnabled { get; set; } = true;
+    public int AutoIntegrityIntervalMinutes { get; set; } = 30;
     public int RamThresholdPercent { get; set; } = 75;
-    public List<string> BlacklistedServices { get; set; } = new() { "DiagTrack", "dmwappushservice", "MapsBroker", "RetailDemo" };
-    public List<string> BlacklistedProcesses { get; set; } = new() { "CompatTelRunner", "DeviceCensus", "wermgr", "sedlauncher" };
+
+    public List<string> BlacklistedServices { get; set; } = new()
+    {
+        "DiagTrack", "dmwappushservice", "MapsBroker", "RetailDemo",
+        "WbioSrvc", "SysMain", "PcaSvc", "WerSvc", "XblAuthManager",
+        "XblGameSave", "XboxNetApiSvc", "WMPNetworkSvc", "RemoteRegistry",
+        "SharedAccess", "diagnosticshost", "DPS", "WdiServiceHost",
+        "WdiSystemHost", "TroubleshootingSvc", "lfsvc", "SensorService", "SensrSvc"
+    };
+
+    public List<string> BlacklistedProcesses { get; set; } = new()
+    {
+        "CompatTelRunner", "DeviceCensus", "wermgr", "sedlauncher",
+        "MicrosoftEdgeUpdate", "GoogleUpdate", "Cortana", "GameBarPresenceWriter",
+        "FeedbackHub", "YourPhone"
+    };
 }
 
 public static class AutoStartupService
@@ -77,6 +95,31 @@ public static class AutoStartupService
     {
         CurrentConfig.AutoGuardianEnabled = enable;
         SaveConfig();
+    }
+
+    public static void AddBlacklistedService(string serviceName)
+    {
+        if (string.IsNullOrWhiteSpace(serviceName)) return;
+        if (!CurrentConfig.BlacklistedServices.Contains(serviceName, StringComparer.OrdinalIgnoreCase))
+        {
+            CurrentConfig.BlacklistedServices.Add(serviceName);
+            SaveConfig();
+        }
+    }
+
+    public static void AddBlacklistedProcess(string processName)
+    {
+        if (string.IsNullOrWhiteSpace(processName)) return;
+        // Normaliza sem extensao .exe se tiver
+        string cleanName = processName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
+            ? processName[..^4]
+            : processName;
+
+        if (!CurrentConfig.BlacklistedProcesses.Contains(cleanName, StringComparer.OrdinalIgnoreCase))
+        {
+            CurrentConfig.BlacklistedProcesses.Add(cleanName);
+            SaveConfig();
+        }
     }
 
     private static bool IsRunKeyConfigured()

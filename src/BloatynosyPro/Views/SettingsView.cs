@@ -109,7 +109,7 @@ public class SettingsView : UserControl
         var cardGuardian = new ModernCard
         {
             Width = 560,
-            Height = 210,
+            Height = 250,
             BackColor = Color.FromArgb(20, 23, 36),
             Margin = new Padding(0, 0, 0, 16)
         };
@@ -148,7 +148,7 @@ public class SettingsView : UserControl
 
         var chkAutoRam = new CheckBox
         {
-            Text = "Otimizar memória RAM automaticamente ao ultrapassar limite de uso",
+            Text = "Otimizar memória RAM periodicamente (igual ao botão manual) e por uso",
             Font = new Font("Segoe UI", 9f),
             ForeColor = Color.FromArgb(203, 213, 225),
             AutoSize = true,
@@ -163,7 +163,7 @@ public class SettingsView : UserControl
 
         var chkAutoDisk = new CheckBox
         {
-            Text = "Limpar arquivos temporários e caches de disco automaticamente",
+            Text = "Limpar arquivos temporários padrão automaticamente em segundo plano",
             Font = new Font("Segoe UI", 9f),
             ForeColor = Color.FromArgb(203, 213, 225),
             AutoSize = true,
@@ -176,10 +176,26 @@ public class SettingsView : UserControl
             AutoStartupService.SaveConfig();
         };
 
+        var chkAutoIntegrity = new CheckBox
+        {
+            Text = "Verificar e reparar integridade do Windows automaticamente (DISM/SFC)",
+            Font = new Font("Segoe UI", 9f),
+            ForeColor = Color.FromArgb(203, 213, 225),
+            AutoSize = true,
+            Checked = AutoStartupService.CurrentConfig.AutoIntegrityCheckEnabled,
+            Margin = new Padding(16, 0, 0, 4)
+        };
+        chkAutoIntegrity.CheckedChanged += (s, e) =>
+        {
+            AutoStartupService.CurrentConfig.AutoIntegrityCheckEnabled = chkAutoIntegrity.Checked;
+            AutoStartupService.SaveConfig();
+        };
+
         flowGuardian.Controls.Add(chkGuardianMain);
         flowGuardian.Controls.Add(chkAutoSvc);
         flowGuardian.Controls.Add(chkAutoRam);
         flowGuardian.Controls.Add(chkAutoDisk);
+        flowGuardian.Controls.Add(chkAutoIntegrity);
         cardGuardian.Controls.Add(flowGuardian);
         flow.Controls.Add(cardGuardian);
 

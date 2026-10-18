@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.IO;
 
 namespace BloatynosyPro.Core;
 
@@ -6,17 +7,23 @@ public static class AutoGuardianService
 {
     private static System.Threading.Timer? _timer;
     private static bool _isRunning;
+    private static bool _isIntegrityRunning;
+    private static DateTime _lastRamCleanTime = DateTime.MinValue;
     private static DateTime _lastDiskCleanTime = DateTime.MinValue;
+    private static DateTime _lastIntegrityCheckTime = DateTime.MinValue;
+
     public static int TotalBlockedCount { get; private set; } = 0;
     public static int TotalRamOptimizations { get; private set; } = 0;
     public static int TotalDiskCleanups { get; private set; } = 0;
+    public static int TotalIntegrityRepairs { get; private set; } = 0;
 
     public static event Action<string>? OnGuardianAction;
 
     public static void Start()
     {
         if (_timer != null) return;
-        _timer = new System.Threading.Timer(async _ => await CheckAndOptimizeAsync(), null, 5000, 12000);
+        // Inicia em 3 segundos e roda a cada 10 segundos
+        _timer = new System.Threading.Timer(async _ => await CheckAndOptimizeAsync(), null, 3000, 10000);
     }
 
     public static void Stop()
@@ -35,24 +42,38 @@ public static class AutoGuardianService
         {
             var config = AutoStartupService.CurrentConfig;
 
-            // 1. Enforce de servicos indesejados e hospedeiros svchost
+            // ========================================================
+            // 1. Bloqueio & Derrubada Automatica de svchost e Servicos
+            // ========================================================
             if (config.AutoServiceBlockEnabled)
             {
+                // Varre hospedeiros svchost em execucao, detecta servicos indesejados e derruba
+                int autoKilledSvchost = await SvchostInspectorService.AutoDetectAndKillUnwantedSvchostAsync();
+                if (autoKilledSvchost > 0)
+                {
+                    TotalBlockedCount += autoKilledSvchost;
+                    OnGuardianAction?.Invoke($"Guardião detectou e derrubou {autoKilledSvchost} hospedeiro(s) svchost com serviços indesejados.");
+                }
+
+                // Enforce de servicos da lista negra do Windows
                 int stoppedServices = await SvchostInspectorService.EnforceBlacklistAsync();
                 if (stoppedServices > 0)
                 {
                     TotalBlockedCount += stoppedServices;
-                    OnGuardianAction?.Invoke($"Guardião derrubou {stoppedServices} serviço(s) indesejado(s) em execução.");
+                    OnGuardianAction?.Invoke($"Guardião desativou {stoppedServices} serviço(s) indesejado(s) em execução.");
                 }
             }
 
-            // 2. Intercepta processos de telemetria/segundo plano da lista negra
+            // ========================================================
+            // 2. Intercepta Processos Prejudiciais da Lista Negra
+            // ========================================================
             var blacklistedProcs = config.BlacklistedProcesses;
             int killedProcs = 0;
 
             foreach (var pName in blacklistedProcs)
             {
-                foreach (var p in Process.GetProcessesByName(pName))
+                string cleanName = pName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ? pName[..^4] : pName;
+                foreach (var p in Process.GetProcessesByName(cleanName))
                 {
                     try
                     {
@@ -70,34 +91,83 @@ public static class AutoGuardianService
             if (killedProcs > 0)
             {
                 TotalBlockedCount += killedProcs;
-                OnGuardianAction?.Invoke($"Guardião finalizou {killedProcs} processo(s) de telemetria/segundo plano.");
+                OnGuardianAction?.Invoke($"Guardião interceptou e finalizou {killedProcs} processo(s) da lista negra.");
             }
 
-            // 3. Monitoramento inteligente de Memoria RAM
+            // ========================================================
+            // 3. Liberacao Automatica de Memoria RAM (identico ao botao manual)
+            // ========================================================
             if (config.AutoRamCleanEnabled)
             {
                 var mem = MemoryOptimizer.GetMemoryStatus();
-                if (mem.UsagePercent >= config.RamThresholdPercent)
+                bool intervalElapsed = (DateTime.Now - _lastRamCleanTime).TotalSeconds >= config.AutoRamCleanIntervalSeconds;
+                bool highUsage = mem.UsagePercent >= config.RamThresholdPercent;
+
+                if (intervalElapsed || highUsage)
                 {
+                    _lastRamCleanTime = DateTime.Now;
                     long freed = await MemoryOptimizer.CleanWorkingSetAsync();
                     double freedMb = freed / (1024.0 * 1024.0);
                     TotalRamOptimizations++;
-                    OnGuardianAction?.Invoke($"RAM em {mem.UsagePercent}%: Guardião liberou ~{freedMb:F0} MB automaticamente.");
+                    OnGuardianAction?.Invoke($"Guardião liberou ~{freedMb:F0} MB de memória RAM automaticamente.");
                 }
             }
 
-            // 4. Limpeza automatica de lixo em disco a cada 30 minutos
-            if (config.AutoDiskCleanEnabled && (DateTime.Now - _lastDiskCleanTime).TotalMinutes >= 30)
+            // ========================================================
+            // 4. Limpeza Automatica de Disco (itens padrao selecionados)
+            // ========================================================
+            if (config.AutoDiskCleanEnabled && (DateTime.Now - _lastDiskCleanTime).TotalSeconds >= config.AutoDiskCleanIntervalSeconds)
             {
                 _lastDiskCleanTime = DateTime.Now;
-                var junkList = DiskCleanerService.ScanJunk();
-                long totalBytes = junkList.Sum(j => j.SizeBytes);
-                if (totalBytes > 200 * 1024 * 1024) // Mais de 200 MB de lixo
+                var defaultJunkFolders = new List<string>
                 {
-                    long cleaned = await DiskCleanerService.CleanJunkAsync(junkList.Select(j => j.Path).ToList());
-                    double cleanedMb = cleaned / (1024.0 * 1024.0);
+                    Path.GetTempPath(),
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Temp"),
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Prefetch"),
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CrashDumps")
+                };
+
+                long cleanedBytes = await DiskCleanerService.CleanJunkAsync(defaultJunkFolders);
+                if (cleanedBytes > 1024 * 1024) // Registra acao se limpou mais de 1 MB
+                {
+                    double cleanedMb = cleanedBytes / (1024.0 * 1024.0);
                     TotalDiskCleanups++;
-                    OnGuardianAction?.Invoke($"Disco: Guardião limpou automaticamente ~{cleanedMb:F0} MB de arquivos temporários.");
+                    OnGuardianAction?.Invoke($"Disco: Guardião limpou automaticamente ~{cleanedMb:F1} MB dos temporários padrão.");
+                }
+            }
+
+            // ========================================================
+            // 5. Verificacao Periodica de Integridade & Auto-Reparo
+            // ========================================================
+            if (config.AutoIntegrityCheckEnabled && !_isIntegrityRunning)
+            {
+                bool timeForCheck = _lastIntegrityCheckTime == DateTime.MinValue
+                    ? (DateTime.Now - Process.GetCurrentProcess().StartTime).TotalSeconds >= 15 // Primeiro check 15s apos ligar
+                    : (DateTime.Now - _lastIntegrityCheckTime).TotalMinutes >= config.AutoIntegrityIntervalMinutes;
+
+                if (timeForCheck)
+                {
+                    _lastIntegrityCheckTime = DateTime.Now;
+                    _ = Task.Run(async () =>
+                    {
+                        _isIntegrityRunning = true;
+                        try
+                        {
+                            bool needsRepair = await SystemIntegrityService.CheckIntegrityNeedsRepairAsync();
+                            if (needsRepair)
+                            {
+                                OnGuardianAction?.Invoke("Integridade: Inconsistências detectadas no Windows. Iniciando reparo automático (DISM/SFC)...");
+                                var res = await SystemIntegrityService.RunAutoRepairAsync(log => OnGuardianAction?.Invoke(log));
+                                TotalIntegrityRepairs++;
+                                OnGuardianAction?.Invoke("🎉 Integridade: Guardião concluiu reparação automática de arquivos do sistema com êxito!");
+                            }
+                        }
+                        catch { }
+                        finally
+                        {
+                            _isIntegrityRunning = false;
+                        }
+                    });
                 }
             }
         }

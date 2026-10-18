@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Text;
 
 namespace BloatynosyPro.Core;
@@ -89,6 +89,61 @@ public static class SystemIntegrityService
             ));
 
             return new IntegrityResult(dismOk, sfcOk, chkdskOk, summaryBuilder.ToString().Trim());
+        });
+    }
+
+    public static async Task<bool> CheckIntegrityNeedsRepairAsync()
+    {
+        return await Task.Run(async () =>
+        {
+            try
+            {
+                string output = await RunCliProcessAsync("dism.exe", "/Online /Cleanup-Image /CheckHealth", _ => { });
+                if (output.Contains("corrupt", StringComparison.OrdinalIgnoreCase) ||
+                    output.Contains("corrompido", StringComparison.OrdinalIgnoreCase) ||
+                    output.Contains("repairable", StringComparison.OrdinalIgnoreCase) ||
+                    output.Contains("reparável", StringComparison.OrdinalIgnoreCase) ||
+                    output.Contains("detectado", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+
+                // Se o CheckHealth não detectou, realiza um /ScanHealth rápido
+                string scanOut = await RunCliProcessAsync("dism.exe", "/Online /Cleanup-Image /ScanHealth", _ => { });
+                if (scanOut.Contains("corrupt", StringComparison.OrdinalIgnoreCase) ||
+                    scanOut.Contains("corrompido", StringComparison.OrdinalIgnoreCase) ||
+                    scanOut.Contains("repairable", StringComparison.OrdinalIgnoreCase) ||
+                    scanOut.Contains("reparável", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+            catch { }
+
+            return false;
+        });
+    }
+
+    public static async Task<IntegrityResult> RunAutoRepairAsync(Action<string>? onLog = null)
+    {
+        return await Task.Run(async () =>
+        {
+            onLog?.Invoke("Integridade: Iniciando reparo automático de imagem do Windows (DISM)...");
+            string dismOut = await RunCliProcessAsync("dism.exe", "/Online /Cleanup-Image /RestoreHealth", line => onLog?.Invoke($"[DISM] {line}"));
+
+            bool dismOk = dismOut.Contains("100.0%", StringComparison.OrdinalIgnoreCase) ||
+                         dismOut.Contains("concluída com êxito", StringComparison.OrdinalIgnoreCase) ||
+                         dismOut.Contains("operation completed successfully", StringComparison.OrdinalIgnoreCase);
+
+            onLog?.Invoke("Integridade: Reparando arquivos essenciais do sistema (SFC)...");
+            string sfcOut = await RunCliProcessAsync("sfc.exe", "/scannow", line => onLog?.Invoke($"[SFC] {line}"));
+
+            bool sfcOk = sfcOut.Contains("não encontrou nenhuma violação", StringComparison.OrdinalIgnoreCase) ||
+                        sfcOut.Contains("reparou", StringComparison.OrdinalIgnoreCase) ||
+                        sfcOut.Contains("repaired", StringComparison.OrdinalIgnoreCase) ||
+                        sfcOut.Contains("successfully", StringComparison.OrdinalIgnoreCase);
+
+            return new IntegrityResult(dismOk, sfcOk, true, "Reparo automático concluído com sucesso.");
         });
     }
 

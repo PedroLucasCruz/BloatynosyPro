@@ -80,14 +80,18 @@ O **BloatynosyPro** foi desenvolvido para resolver o maior problema dos otimizad
 ### 2. 🤖 Guardião Automático em Tempo Real (Auto-Pilot / Zero Esforço)
 - **Otimização Contínua e Silenciosa**: O usuário não precisa ficar abrindo o programa e clicando em "Otimizar". O Guardião opera em segundo plano na bandeja do sistema (System Tray).
 - **Intercepção de Bloqueio Imediato**: Sempre que um serviço ou processo indesejado da sua lista negra tentar subir no Windows, o Guardião derruba na hora.
-- **Auto-Descarregamento de Memória RAM**: Quando o consumo de RAM atinge níveis altos (acima de 75%), o Guardião descarrega automaticamente as páginas de trabalho ociosas, mantendo o Windows sempre fluido e responsivo.
-- **Controle com 1 Clique**: Um interruptor destacado no Dashboard permite ativar ou pausar o Guardião instantaneamente.
+- **Auto-Descarregamento de Memória RAM**: Executa a liberação e descarregamento contínuo de páginas de memória RAM automaticamente (idêntico ao botão manual), mantendo o Windows sempre com memória livre sem exigir intervenção humana.
+- **Limpeza de Disco Silenciosa**: Limpa periodicamente em segundo plano os itens padrão de lixo do sistema (`%TEMP%`, `Windows\Temp`, `Prefetch` e relatórios de erro `CrashDumps`).
+- **Verificação & Reparo Automático de Integridade**: Periodicamente verifica se o sistema operacional possui inconsistências ou arquivos corrompidos (via DISM CheckHealth) e, caso detecte avarias, aciona automaticamente o reparo com DISM RestoreHealth e SFC Scannow sem incomodar o usuário.
+- **Controle com 1 Clique**: Um interruptor destacado no Dashboard permite ativar ou pausar o Guardião instantaneamente, com 4 contadores em tempo real (Bloqueios, RAM, Disco e Reparos).
 
 ### 3. 🔥 Otimizador de Processos & Inspetor de Hospedeiros (`svchost.exe`)
 - **Raio-X de Hospedeiros de Serviços Nativos**: O sistema inspeciona dentro de cada PID de `svchost.exe` para listar quais serviços do Windows estão rodando dentro dele (ex: `DiagTrack`, `dmwappushservice`, `MapsBroker`, `PcaSvc`, `WerSvc`, `RetailDemo`).
 - **Classificação Inteligente**: Separa hospedeiros que contêm serviços indesejados daqueles que contêm serviços vitais do sistema (Rede, Áudio, RPC).
-- **Derrubada com Bloqueio Permanente**:
-  - Ao derrubar um hospedeiro indesejado, o sistema não apenas encerra o PID atual, mas **desativa permanentemente a inicialização do serviço no Windows (`sc config <serviço> start= disabled`)**, garantindo que ele **nunca mais inicie** consumindo memória, PIDs ou CPU.
+- **Finalização & Bloqueio com 1 Clique (ou Botão Direito)**:
+  - Disponível em **todas as abas e filtros** da tabela de processos.
+  - Ao derrubar um hospedeiro `svchost.exe` indesejado, o sistema não apenas encerra o PID atual, mas **desativa permanentemente a inicialização do serviço no Windows (`sc config <serviço> start= disabled`)** e registra na lista negra do Guardião para ser derrubado preventivamente.
+  - Ao finalizar qualquer outro processo indesejado pelo usuário, o nome é automaticamente registrado no Guardião para nunca mais consumir recursos da máquina.
   - Lista negra persistente sincronizada automaticamente no `Config.json`.
 
 ### 4. 🚀 Inicialização com o Windows & Preset Configurável

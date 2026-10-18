@@ -1,4 +1,4 @@
-﻿using System.Drawing;
+using System.Drawing;
 using System.Windows.Forms;
 using BloatynosyPro.Controls;
 using BloatynosyPro.Core;
@@ -13,6 +13,7 @@ public class ProcessOptimizerView : UserControl
     private ModernButton _btnOptimizeNow = null!;
     private ModernButton _btnKillAndBlock = null!;
     private Label _lblStatus = null!;
+    private ContextMenuStrip _contextMenu = null!;
     private List<DetailedProcessItem> _items = new();
     private List<SvchostGroupItem> _svchostGroups = new();
 
@@ -54,7 +55,7 @@ public class ProcessOptimizerView : UserControl
 
         var lblSubtitle = new Label
         {
-            Text = "Analise processos ativos e hospedeiros svchost. Identifique e derrube serviços nativos indesejados bloqueando sua reinicialização permanente.",
+            Text = "Analise processos e instâncias svchost. Finalize e bloqueie processos e serviços indesejados no Guardião com 1 clique.",
             Font = new Font("Segoe UI", 9.5f),
             ForeColor = Color.FromArgb(148, 163, 184),
             AutoSize = true,
@@ -105,9 +106,9 @@ public class ProcessOptimizerView : UserControl
 
         _btnKillAndBlock = new ModernButton
         {
-            Text = "🚫 Derrubar & Bloquear Serviço",
+            Text = "🚫 Finalizar & Bloquear no Guardião",
             NormalColor = Color.FromArgb(239, 68, 68),
-            Size = new Size(230, 36),
+            Size = new Size(260, 36),
             Margin = new Padding(0, 2, 8, 0)
         };
         _btnKillAndBlock.Click += async (s, e) => await KillAndBlockSelectedAsync();
@@ -128,15 +129,23 @@ public class ProcessOptimizerView : UserControl
             Margin = new Padding(0, 10, 0, 0)
         };
 
+        // Context Menu para clique direito
+        _contextMenu = new ContextMenuStrip();
+        var menuKill = new ToolStripMenuItem("🚫 Finalizar e Adicionar ao Guardião Automático");
+        menuKill.Click += async (s, e) => await KillAndBlockSelectedAsync();
+        _contextMenu.Items.Add(menuKill);
+
         _lvProcesses = new ListView
         {
             Dock = DockStyle.Fill,
             View = View.Details,
             FullRowSelect = true,
+            ContextMenuStrip = _contextMenu,
             BackColor = Color.FromArgb(24, 27, 44),
             ForeColor = Color.White,
             BorderStyle = BorderStyle.None
         };
+        _lvProcesses.SelectedIndexChanged += (s, e) => UpdateKillButtonLabel();
         SetupDefaultColumns();
 
         cardList.Controls.Add(_lvProcesses);
@@ -167,6 +176,28 @@ public class ProcessOptimizerView : UserControl
         _lvProcesses.Columns.Add("Descrição / Serviços Hospedados", 400);
     }
 
+    private void UpdateKillButtonLabel()
+    {
+        if (_lvProcesses.SelectedItems.Count == 0)
+        {
+            _btnKillAndBlock.Text = "🚫 Finalizar & Bloquear no Guardião";
+            return;
+        }
+
+        var tag = _lvProcesses.SelectedItems[0].Tag;
+        if (tag is SvchostGroupItem)
+        {
+            _btnKillAndBlock.Text = "🚫 Derrubar svchost & Bloquear";
+        }
+        else if (tag is DetailedProcessItem proc)
+        {
+            if (proc.Name.Equals("svchost", StringComparison.OrdinalIgnoreCase))
+                _btnKillAndBlock.Text = "🚫 Derrubar svchost & Bloquear";
+            else
+                _btnKillAndBlock.Text = $"🚫 Finalizar {proc.Name} & Bloquear";
+        }
+    }
+
     private void LoadProcesses()
     {
         _lblStatus.Text = "Examinando tabela de processos e serviços do Windows...";
@@ -186,7 +217,6 @@ public class ProcessOptimizerView : UserControl
 
         if (_cbFilter.SelectedIndex == 1) // Modo Svchost Inspector
         {
-            _btnKillAndBlock.Visible = true;
             _lvProcesses.Columns.Clear();
             _lvProcesses.Columns.Add("Hospedeiro", 120);
             _lvProcesses.Columns.Add("PID", 80);
@@ -217,7 +247,6 @@ public class ProcessOptimizerView : UserControl
         else
         {
             SetupDefaultColumns();
-            _btnKillAndBlock.Visible = false;
 
             IEnumerable<DetailedProcessItem> filtered = _cbFilter.SelectedIndex switch
             {
@@ -253,6 +282,7 @@ public class ProcessOptimizerView : UserControl
         }
 
         _lvProcesses.EndUpdate();
+        UpdateKillButtonLabel();
     }
 
     private async Task ExecuteOptimizationAsync()
@@ -263,7 +293,10 @@ public class ProcessOptimizerView : UserControl
 
         var result = await ProcessOptimizerService.OptimizeProcessesAsync();
 
-        _lblStatus.Text = $"🎉 Sucesso! {result.TerminatedCount} processos prejudiciais finalizados e {result.TrimmedCount} processos otimizados. ~{result.FreedMemoryMb:F0} MB recuperados!";
+        // Tambem faz enforcement automatico de svchost indesejados
+        int svchostKilled = await SvchostInspectorService.AutoDetectAndKillUnwantedSvchostAsync();
+
+        _lblStatus.Text = $"🎉 Sucesso! {result.TerminatedCount} processos e {svchostKilled} hospedeiros svchost finalizados. ~{result.FreedMemoryMb:F0} MB recuperados!";
         _lblStatus.ForeColor = Color.FromArgb(16, 185, 129);
 
         LoadProcesses();
@@ -274,34 +307,75 @@ public class ProcessOptimizerView : UserControl
     {
         if (_lvProcesses.SelectedItems.Count == 0)
         {
-            MessageBox.Show("Selecione um hospedeiro svchost da lista para derrubar e desativar.", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show("Selecione um processo ou hospedeiro svchost da lista para finalizar e bloquear.", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Information);
             return;
         }
 
-        var selected = _lvProcesses.SelectedItems[0].Tag as SvchostGroupItem;
-        if (selected == null) return;
+        var tag = _lvProcesses.SelectedItems[0].Tag;
 
-        var unwanted = selected.Services.Where(s => s.IsUnwanted).ToList();
-        string serviceListStr = unwanted.Count > 0
-            ? string.Join(", ", unwanted.Select(u => u.Name))
-            : string.Join(", ", selected.Services.Select(s => s.Name));
-
-        var confirm = MessageBox.Show(
-            $"Deseja realmente derrubar o processo PID {selected.Pid} e desativar permanentemente o(s) serviço(s) '{serviceListStr}' no Windows para nunca mais iniciarem?",
-            "Confirmar Bloqueio Permanente",
-            MessageBoxButtons.YesNo,
-            MessageBoxIcon.Warning
-        );
-
-        if (confirm != DialogResult.Yes) return;
-
-        _lblStatus.Text = "Derrubando hospedeiro e desativando serviços no Windows...";
-        foreach (var svc in selected.Services)
+        // Caso 1: Item selecionado no modo Svchost Inspector
+        if (tag is SvchostGroupItem svchostGroup)
         {
-            await SvchostInspectorService.KillAndDisableServiceAsync(selected.Pid, svc.Name);
+            var unwanted = svchostGroup.Services.Where(s => s.IsUnwanted).ToList();
+            string serviceListStr = unwanted.Count > 0
+                ? string.Join(", ", unwanted.Select(u => u.Name))
+                : string.Join(", ", svchostGroup.Services.Select(s => s.Name));
+
+            var confirm = MessageBox.Show(
+                $"Deseja realmente derrubar o processo svchost PID {svchostGroup.Pid} e desativar permanentemente o(s) serviço(s) '{serviceListStr}' no Windows para serem bloqueados pelo Guardião?",
+                "Confirmar Bloqueio Permanente",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning
+            );
+
+            if (confirm != DialogResult.Yes) return;
+
+            _lblStatus.Text = "Derrubando hospedeiro e adicionando serviços ao Guardião...";
+            await SvchostInspectorService.KillAndBlacklistSvchostAsync(svchostGroup.Pid);
+
+            _lblStatus.Text = $"🎉 Hospedeiro PID {svchostGroup.Pid} finalizado e adicionado ao Guardião com sucesso!";
+            LoadProcesses();
+            return;
         }
 
-        _lblStatus.Text = $"🎉 Hospedeiro PID {selected.Pid} finalizado e serviços desativados com sucesso!";
-        LoadProcesses();
+        // Caso 2: Item selecionado no modo de Processos Gerais (DetailedProcessItem)
+        if (tag is DetailedProcessItem procItem)
+        {
+            if (procItem.Name.Equals("svchost", StringComparison.OrdinalIgnoreCase))
+            {
+                var services = SvchostInspectorService.GetServicesForPid(procItem.Pid);
+                string svcNames = services.Count > 0 ? string.Join(", ", services.Select(s => s.Name)) : "Serviço nativo";
+
+                var confirm = MessageBox.Show(
+                    $"Deseja derrubar a instância svchost (PID {procItem.Pid}) contendo '{svcNames}' e adicionar à lista negra do Guardião?",
+                    "Confirmar Derrubada de Hospedeiro",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning
+                );
+
+                if (confirm != DialogResult.Yes) return;
+
+                _lblStatus.Text = $"Derrubando svchost PID {procItem.Pid}...";
+                await SvchostInspectorService.KillAndBlacklistSvchostAsync(procItem.Pid);
+                _lblStatus.Text = $"🎉 Hospedeiro svchost PID {procItem.Pid} derrubado e registrado no Guardião com sucesso!";
+            }
+            else
+            {
+                var confirm = MessageBox.Show(
+                    $"Deseja finalizar o processo '{procItem.Name}' (PID {procItem.Pid}) e adicioná-lo à lista negra do Guardião para ser derrubado automaticamente sempre que iniciar?",
+                    "Confirmar Finalização & Bloqueio no Guardião",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning
+                );
+
+                if (confirm != DialogResult.Yes) return;
+
+                _lblStatus.Text = $"Finalizando {procItem.Name}...";
+                await ProcessOptimizerService.KillAndBlacklistProcessAsync(procItem.Pid, procItem.Name);
+                _lblStatus.Text = $"🎉 Processo '{procItem.Name}' finalizado e adicionado ao Guardião com sucesso!";
+            }
+
+            LoadProcesses();
+        }
     }
 }
