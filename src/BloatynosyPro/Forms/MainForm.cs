@@ -15,6 +15,7 @@ public partial class MainForm : Form
     private DashboardView _dashboardView = null!;
     private PerformanceView _performanceView = null!;
     private ProcessOptimizerView _processOptView = null!;
+    private SystemIntegrityView _integrityView = null!;
     private SystemTweaksView _tweaksView = null!;
     private BloatwareView _bloatwareView = null!;
     private DiskCleanerView _cleanerView = null!;
@@ -40,9 +41,9 @@ public partial class MainForm : Form
 
     private void ConfigureForm()
     {
-        Text = "BloatynosyPro · Otimizador Gamer & Privacidade";
-        Size = new Size(1220, 780);
-        MinimumSize = new Size(1000, 680);
+        Text = "BloatynosyPro · Otimizador Gamer & Integridade do Windows";
+        Size = new Size(1240, 800);
+        MinimumSize = new Size(1000, 700);
         StartPosition = FormStartPosition.CenterScreen;
         BackColor = Color.FromArgb(15, 17, 26);
         ForeColor = Color.White;
@@ -80,11 +81,9 @@ public partial class MainForm : Form
     {
         _trayIcon.ShowBalloonTip(3000, "BloatynosyPro", "Otimizando inicialização do Windows em segundo plano...", ToolTipIcon.Info);
 
-        // 1. Otimizar processos e descarregar RAM
         await ProcessOptimizerService.OptimizeProcessesAsync();
         await MemoryOptimizer.CleanWorkingSetAsync();
 
-        // 2. Aplicar regras recomendadas
         await Task.Run(() =>
         {
             if (WinRulesEngine.Rules.Count == 0)
@@ -149,7 +148,7 @@ public partial class MainForm : Form
 
         var lblSub = new Label
         {
-            Text = "Windows Optimizer v1.1",
+            Text = "Windows Optimizer v1.2",
             Font = new Font("Segoe UI", 8.5f),
             ForeColor = Color.FromArgb(148, 163, 184),
             AutoSize = true,
@@ -164,22 +163,24 @@ public partial class MainForm : Form
             Dock = DockStyle.Fill,
             FlowDirection = FlowDirection.TopDown,
             WrapContents = false,
-            Padding = new Padding(8, 10, 8, 8),
+            Padding = new Padding(8, 8, 8, 8),
             AutoScroll = true
         };
 
         var btnDash = CreateNavButton("⚡ Visão Geral", 0);
         var btnPerf = CreateNavButton("📊 Desempenho", 1);
         var btnProcs = CreateNavButton("🔥 Otimizar Processos", 2);
-        var btnTweaks = CreateNavButton("🛡️ Otimizações", 3);
-        var btnBloat = CreateNavButton("🗑️ Bloatwares", 4);
-        var btnClean = CreateNavButton("🧹 Limpeza de Disco", 5);
-        var btnStartup = CreateNavButton("🚀 Inicialização", 6);
-        var btnSettings = CreateNavButton("⚙️ Configurações", 7);
+        var btnIntegrity = CreateNavButton("🛡️ Integridade do Windows", 3);
+        var btnTweaks = CreateNavButton("⚙️ Otimizações", 4);
+        var btnBloat = CreateNavButton("🗑️ Bloatwares & Limpeza", 5);
+        var btnClean = CreateNavButton("🧹 Limpeza de Disco", 6);
+        var btnStartup = CreateNavButton("🚀 Inicialização", 7);
+        var btnSettings = CreateNavButton("🔧 Configurações", 8);
 
         navFlow.Controls.Add(btnDash);
         navFlow.Controls.Add(btnPerf);
         navFlow.Controls.Add(btnProcs);
+        navFlow.Controls.Add(btnIntegrity);
         navFlow.Controls.Add(btnTweaks);
         navFlow.Controls.Add(btnBloat);
         navFlow.Controls.Add(btnClean);
@@ -201,6 +202,7 @@ public partial class MainForm : Form
         _dashboardView = new DashboardView();
         _performanceView = new PerformanceView();
         _processOptView = new ProcessOptimizerView();
+        _integrityView = new SystemIntegrityView();
         _tweaksView = new SystemTweaksView();
         _bloatwareView = new BloatwareView();
         _cleanerView = new DiskCleanerView();
@@ -217,14 +219,14 @@ public partial class MainForm : Form
             Text = "   " + text,
             Tag = index,
             Width = 225,
-            Height = 42,
+            Height = 40,
             FlatStyle = FlatStyle.Flat,
             Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
             ForeColor = Color.FromArgb(203, 213, 225),
             BackColor = Color.Transparent,
             TextAlign = ContentAlignment.MiddleLeft,
             Cursor = Cursors.Hand,
-            Margin = new Padding(0, 0, 0, 3)
+            Margin = new Padding(0, 0, 0, 2)
         };
         btn.FlatAppearance.BorderSize = 0;
         btn.FlatAppearance.MouseOverBackColor = Color.FromArgb(32, 37, 58);
@@ -257,10 +259,11 @@ public partial class MainForm : Form
             0 => _dashboardView,
             1 => _performanceView,
             2 => _processOptView,
-            3 => _tweaksView,
-            4 => _bloatwareView,
-            5 => _cleanerView,
-            6 => _startupView,
+            3 => _integrityView,
+            4 => _tweaksView,
+            5 => _bloatwareView,
+            6 => _cleanerView,
+            7 => _startupView,
             _ => _settingsView
         };
 
@@ -275,10 +278,6 @@ public partial class MainForm : Form
 
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
-        if (e.CloseReason == CloseReason.UserClosing && AutoStartupService.CurrentConfig.AutoStartWithWindows)
-        {
-            // Opcional: pode minimizar no tray se configurado
-        }
         _trayIcon.Visible = false;
         _trayIcon.Dispose();
         base.OnFormClosing(e);

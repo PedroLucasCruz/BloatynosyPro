@@ -11,6 +11,7 @@ public class BloatwareView : UserControl
     private ModernButton _btnScan = null!;
     private ModernButton _btnSelectSafe = null!;
     private ModernButton _btnUninstall = null!;
+    private CheckBox _chkDeepClean = null!;
     private Label _lblStatus = null!;
     private List<AppxItem> _installedPackages = new();
 
@@ -36,13 +37,13 @@ public class BloatwareView : UserControl
         var topPanel = new Panel
         {
             Dock = DockStyle.Top,
-            Height = 100,
+            Height = 110,
             BackColor = Color.Transparent
         };
 
         var lblTitle = new Label
         {
-            Text = "🗑️ Desinstalador de Bloatwares (AppX Packages)",
+            Text = "🗑️ Desinstalador de Bloatwares & Limpeza Profunda",
             Font = new Font("Segoe UI", 14f, FontStyle.Bold),
             ForeColor = Color.White,
             AutoSize = true,
@@ -51,7 +52,7 @@ public class BloatwareView : UserControl
 
         var lblSubtitle = new Label
         {
-            Text = "Remova aplicativos nativos e patrocinados pré-instalados que consomem espaço e rodam em segundo plano.",
+            Text = "Remova aplicativos nativos e patrocinados. A Desinstalação Profunda vasculha e apaga 100% dos resíduos em AppData, ProgramData e Registro.",
             Font = new Font("Segoe UI", 9.5f),
             ForeColor = Color.FromArgb(148, 163, 184),
             AutoSize = true,
@@ -89,13 +90,24 @@ public class BloatwareView : UserControl
             Text = "🗑️ Desinstalar Selecionados",
             NormalColor = Color.FromArgb(239, 68, 68),
             Size = new Size(200, 36),
-            Margin = new Padding(0, 2, 8, 0)
+            Margin = new Padding(0, 2, 12, 0)
         };
         _btnUninstall.Click += async (s, e) => await UninstallSelectedAsync();
+
+        _chkDeepClean = new CheckBox
+        {
+            Text = "🧹 Desinstalação Profunda (Limpar 100% de vestígios)",
+            Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
+            ForeColor = Color.FromArgb(52, 211, 153),
+            AutoSize = true,
+            Checked = true,
+            Margin = new Padding(0, 8, 0, 0)
+        };
 
         toolPanel.Controls.Add(_btnScan);
         toolPanel.Controls.Add(_btnSelectSafe);
         toolPanel.Controls.Add(_btnUninstall);
+        toolPanel.Controls.Add(_chkDeepClean);
 
         topPanel.Controls.Add(lblTitle);
         topPanel.Controls.Add(lblSubtitle);
@@ -212,8 +224,12 @@ public class BloatwareView : UserControl
             return;
         }
 
+        string deepMsg = _chkDeepClean.Checked
+            ? "\n\n🧹 Desinstalação Profunda ATIVADA: Todos os vestígios em AppData, ProgramData e Registro serão expurgados."
+            : "";
+
         var confirm = MessageBox.Show(
-            $"Deseja realmente desinstalar os {toRemove.Count} aplicativos selecionados?",
+            $"Deseja realmente desinstalar os {toRemove.Count} aplicativos selecionados?{deepMsg}",
             "Confirmar Remoção",
             MessageBoxButtons.YesNo,
             MessageBoxIcon.Warning
@@ -223,15 +239,31 @@ public class BloatwareView : UserControl
 
         _btnUninstall.Enabled = false;
         int removed = 0;
+        int totalFolders = 0;
+        int totalFiles = 0;
+        int totalReg = 0;
 
         foreach (var app in toRemove)
         {
             _lblStatus.Text = $"Desinstalando {app.Name}...";
             await AppxDebloater.RemovePackageAsync(app.PackageFullName);
             removed++;
+
+            if (_chkDeepClean.Checked)
+            {
+                _lblStatus.Text = $"Vasculhando e expurgando vestígios de {app.Name}...";
+                var cleanRes = await DeepUninstallService.PurgeAppResidualsAsync(app.Name, app.PackageFullName);
+                totalFolders += cleanRes.FoldersRemoved;
+                totalFiles += cleanRes.FilesRemoved;
+                totalReg += cleanRes.RegistryKeysRemoved;
+            }
         }
 
-        _lblStatus.Text = $"🎉 {removed} pacotes desinstalados com sucesso!";
+        string extraCleanMsg = _chkDeepClean.Checked
+            ? $" Foram eliminados {totalFolders} pastas, {totalFiles} arquivos residuais e {totalReg} chaves de registro."
+            : "";
+
+        _lblStatus.Text = $"🎉 {removed} pacotes desinstalados com sucesso!{extraCleanMsg}";
         await ScanAppsAsync();
         _btnUninstall.Enabled = true;
     }

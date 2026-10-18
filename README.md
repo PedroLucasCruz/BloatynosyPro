@@ -89,14 +89,29 @@ O **BloatynosyPro** foi desenvolvido para resolver o maior problema dos otimizad
 - **Preset Selecionável**: O usuário escolhe se no boot deve aplicar o *Modo Equilibrado*, *Modo Gamer* ou *Modo Privacidade*.
 - **Ativação/Desativação com 1 Clique**: Configuração simples e reversível a qualquer momento na aba de Configurações.
 
-### 4. 📊 Monitoramento de Hardware em Tempo Real
+### 4. 🛡️ Integridade & Reparo Automático do Windows (1 Clique)
+- **Diagnóstico e Reparação Completa em 1 Toque**:
+  - **1. DISM (`/Online /Cleanup-Image /RestoreHealth`)**: Corrige o repositório de componentes e imagens base do Windows que impedem ferramentas de reparo de funcionar.
+  - **2. SFC (`/scannow`)**: Varre e repara automaticamente todos os arquivos essenciais e bibliotecas DLL corrompidas do sistema operacional.
+  - **3. CHKDSK Online (`chkdsk C: /scan`)**: Analisa o sistema de arquivos no HD ou SSD em busca de falhas e inconsistências lógicas que causam travamentos e lentidão, sem exigir que o computador seja reiniciado!
+- **Feedback Visual com Console em Tempo Real**: Barra de progresso animada com 3 fases e exibição dos logs oficiais gerados pelo Windows.
+
+### 5. 🗑️ Desinstalador com Desinstalação Profunda (100% Livre de Vestígios)
+- **Eliminação Total de Rastros**:
+  - Além de desinstalar o pacote AppX, o sistema vasculha o disco e o registro apagando pastas de cache em `%LocalAppData%\Packages\<PackageFullName>`, diretórios residuais em `%AppData%`, `%LocalAppData%`, `C:\ProgramData` e chaves órfãs no registro do Windows (`HKCU\Software\...`).
+  - Seu computador fica **100% livre** de qualquer informação ou resíduo deixado pelo programa desinstalado.
+- Classificação inteligente baseada no `AppRules.ini`:
+  - 🛡️ **Protegido do Sistema**: Apps vitais (Loja, Instalador de Pacotes) são bloqueados contra remoção acidental.
+  - 🗑️ **Seguro para Remoção**: Bloatwares patrocinados e dispensáveis (BingWeather, Solitaire, TikTok, Clipchamp, etc.).
+
+### 6. 📊 Monitoramento de Hardware em Tempo Real
 - **Memória RAM**: Exibe o consumo exato em GBs e percentual, com botão de **Limpeza Imediata de Memória (`EmptyWorkingSet` via Win32 API)**, liberando centenas de megabytes de RAM inativa instantaneamente.
 - **Processador (CPU)**: Acompanha a carga de uso geral e exibe a tabela com os **processos que mais consomem processamento e memória**.
 - **Disco do Sistema (C:)**: Mostra o percentual de ocupação e espaço livre em gigabytes.
 - **Placas de Vídeo (GPU)**: Identifica automaticamente adaptadores gráficos dedicados (NVIDIA, AMD) e integrados (Intel).
 - **Tráfego de Rede**: Medição contínua de taxas de Download e Upload em KB/s.
 
-### 5. 🛡️ Otimizações do Windows (Motor WinRules)
+### 7. ⚙️ Otimizações do Windows (Motor WinRules)
 - Catálogo com mais de **1.200 regras** divididas em categorias:
   - `Ads` (Propagandas no Explorer, Tela de Bloqueio e Configurações).
   - `AI` (Desativação de recursos invasivos de IA, Copilot e Recall).
@@ -106,14 +121,7 @@ O **BloatynosyPro** foi desenvolvido para resolver o maior problema dos otimizad
   - `Taskbar` (Widgets, Bing Search no Iniciar, Chat).
 - Permite checar o estado atual de cada regra, aplicar as alterações ou restaurar os padrões do Windows a qualquer momento (*Rollback*).
 
-### 4. 🗑️ Desinstalador de Bloatware (AppX Packages)
-- Varre os aplicativos nativos do Windows usando PowerShell assíncrono.
-- Classificação inteligente baseada no `AppRules.ini`:
-  - 🛡️ **Protegido do Sistema**: Apps vitais (Loja, Instalador de Pacotes) são bloqueados contra remoção acidental.
-  - 🗑️ **Seguro para Remoção**: Bloatwares patrocinados e dispensáveis (BingWeather, Solitaire, TikTok, Clipchamp, etc.).
-  - 👤 **Aplicativos Pessoais**: Identificados para o usuário decidir.
-
-### 5. 🧹 Limpeza de Disco & Arquivos Temporários
+### 8. 🧹 Limpeza de Disco & Arquivos Temporários
 - Analisa diretórios com acúmulo de lixo:
   - Arquivos temporários do usuário (`%TEMP%`)
   - Temporários do sistema (`Windows\Temp`)
@@ -121,11 +129,11 @@ O **BloatynosyPro** foi desenvolvido para resolver o maior problema dos otimizad
   - Relatórios de falha e despejos de memória (`CrashDumps`)
 - Liberação segura de espaço em disco com 1 clique.
 
-### 6. 🚀 Gerenciador de Inicialização (Startup)
+### 9. 🚀 Gerenciador de Inicialização (Startup)
 - Lista programas registrados em `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`, `HKLM` e na pasta de Inicializar.
 - Permite desativar programas desnecessários para acelerar o tempo de boot do computador.
 
-### 7. 🌐 Internacionalização Dinâmica (i18n)
+### 10. 🌐 Internacionalização Dinâmica (i18n)
 - Suporte nativo completo a **Português do Brasil (PT-BR)** como idioma padrão.
 - Seletor imediato para **Inglês (EN-US)** na aba de Configurações, trocando todos os textos da interface sem necessidade de reiniciar.
 
