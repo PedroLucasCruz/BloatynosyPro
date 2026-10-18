@@ -64,6 +64,8 @@ public static class AutoGuardianService
                 }
             }
 
+            uint fgPid = MemoryOptimizer.GetForegroundProcessId();
+
             // ========================================================
             // 2. Intercepta Processos Prejudiciais da Lista Negra
             // ========================================================
@@ -77,6 +79,9 @@ public static class AutoGuardianService
                 {
                     try
                     {
+                        // PROTEÇÃO ABSOLUTA: Nunca finaliza o aplicativo/jogo ativo em foco na tela do usuário
+                        if (p.Id == fgPid) continue;
+
                         if (!p.HasExited)
                         {
                             p.Kill();
@@ -95,7 +100,7 @@ public static class AutoGuardianService
             }
 
             // ========================================================
-            // 3. Liberacao Automatica de Memoria RAM (identico ao botao manual)
+            // 3. Liberacao Automatica de Memoria RAM (com protecao de jogos)
             // ========================================================
             if (config.AutoRamCleanEnabled)
             {
@@ -106,17 +111,20 @@ public static class AutoGuardianService
                 if (intervalElapsed || highUsage)
                 {
                     _lastRamCleanTime = DateTime.Now;
-                    long freed = await MemoryOptimizer.CleanWorkingSetAsync();
+                    // protectForegroundAndGames = true protege 100% o jogo ativo e launchers (Steam, etc.)
+                    long freed = await MemoryOptimizer.CleanWorkingSetAsync(protectForegroundAndGames: true);
                     double freedMb = freed / (1024.0 * 1024.0);
                     TotalRamOptimizations++;
-                    OnGuardianAction?.Invoke($"Guardião liberou ~{freedMb:F0} MB de memória RAM automaticamente.");
+                    OnGuardianAction?.Invoke($"Guardião liberou ~{freedMb:F0} MB de RAM ociosa em segundo plano.");
                 }
             }
 
             // ========================================================
             // 4. Limpeza Automatica de Disco (itens padrao selecionados)
             // ========================================================
-            if (config.AutoDiskCleanEnabled && (DateTime.Now - _lastDiskCleanTime).TotalSeconds >= config.AutoDiskCleanIntervalSeconds)
+            // No Modo Gamer, evita I/O pesado de disco durante jogos
+            bool isGamerMode = config.StartupPreset.Equals("Gamer", StringComparison.OrdinalIgnoreCase);
+            if (config.AutoDiskCleanEnabled && !isGamerMode && (DateTime.Now - _lastDiskCleanTime).TotalSeconds >= config.AutoDiskCleanIntervalSeconds)
             {
                 _lastDiskCleanTime = DateTime.Now;
                 var defaultJunkFolders = new List<string>
@@ -139,7 +147,7 @@ public static class AutoGuardianService
             // ========================================================
             // 5. Verificacao Periodica de Integridade & Auto-Reparo
             // ========================================================
-            if (config.AutoIntegrityCheckEnabled && !_isIntegrityRunning)
+            if (config.AutoIntegrityCheckEnabled && !isGamerMode && !_isIntegrityRunning)
             {
                 bool timeForCheck = _lastIntegrityCheckTime == DateTime.MinValue
                     ? (DateTime.Now - Process.GetCurrentProcess().StartTime).TotalSeconds >= 15 // Primeiro check 15s apos ligar

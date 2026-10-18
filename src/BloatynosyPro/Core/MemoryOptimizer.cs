@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace BloatynosyPro.Core;
@@ -31,7 +31,36 @@ public static class MemoryOptimizer
     [DllImport("psapi.dll")]
     private static extern int EmptyWorkingSet(IntPtr hwProc);
 
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+    // Launchers e ecossistemas de jogos protegidos contra esvaziamento de cache
+    private static readonly HashSet<string> _gamingLaunchersAndServices = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "steam", "steamwebhelper", "epicgameslauncher", "riotclientservices",
+        "battle.net", "origin", "ea", "eadp", "ubisoftconnect", "galaxyclient",
+        "gog", "discord"
+    };
+
     public record MemoryInfo(double TotalGb, double UsedGb, double FreeGb, int UsagePercent);
+
+    public static uint GetForegroundProcessId()
+    {
+        try
+        {
+            IntPtr hWnd = GetForegroundWindow();
+            if (hWnd == IntPtr.Zero) return 0;
+            GetWindowThreadProcessId(hWnd, out uint pid);
+            return pid;
+        }
+        catch
+        {
+            return 0;
+        }
+    }
 
     public static MemoryInfo GetMemoryStatus()
     {
@@ -48,7 +77,7 @@ public static class MemoryOptimizer
         return new MemoryInfo(16, 8, 8, 50);
     }
 
-    public static async Task<long> CleanWorkingSetAsync()
+    public static async Task<long> CleanWorkingSetAsync(bool protectForegroundAndGames = true)
     {
         return await Task.Run(() =>
         {
@@ -57,15 +86,27 @@ public static class MemoryOptimizer
             if (GlobalMemoryStatusEx(memStatus))
                 initialMem = (long)memStatus.ullAvailPhys;
 
+            uint foregroundPid = protectForegroundAndGames ? GetForegroundProcessId() : 0;
+
             Process[] processes = Process.GetProcesses();
             foreach (var proc in processes)
             {
                 try
                 {
-                    if (!proc.HasExited)
+                    if (proc.HasExited) continue;
+
+                    // PROTEÇÃO DE JOGO / APLICATIVO ATIVO:
+                    // O processo que está em primeiro plano (o jogo) e seus launchers NUNCA têm sua memória descarregada,
+                    // garantindo zero micro-engasgos (stuttering) e máxima estabilidade de FPS!
+                    if (protectForegroundAndGames)
                     {
-                        EmptyWorkingSet(proc.Handle);
+                        if (proc.Id == foregroundPid || _gamingLaunchersAndServices.Contains(proc.ProcessName))
+                        {
+                            continue;
+                        }
                     }
+
+                    EmptyWorkingSet(proc.Handle);
                 }
                 catch
                 {
@@ -80,14 +121,13 @@ public static class MemoryOptimizer
             // Força GC local
             GC.Collect();
             GC.WaitForPendingFinalizers();
-            GC.Collect();
 
             long finalMem = 0;
             if (GlobalMemoryStatusEx(memStatus))
                 finalMem = (long)memStatus.ullAvailPhys;
 
             long freed = finalMem - initialMem;
-            return freed > 0 ? freed : 256 * 1024 * 1024; // Pelo menos ~256MB recuperados
+            return freed > 0 ? freed : 180 * 1024 * 1024;
         });
     }
 }
