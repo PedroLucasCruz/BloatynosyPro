@@ -1,21 +1,17 @@
-﻿# ⚡ BloatynosyPro
+# ⚡ BloatynosyPro
 
 > **Otimizador Inteligente de Performance, Desempenho e Privacidade para Windows 10 e 11**  
 > Construído em C# com **.NET 9.0 (Windows Forms Moderno)** baseado na engenharia reversa do ecossistema Bloatynosy.
 
 ---
 
-## ⚡ Como Executar em 1 Clique
+## ⚡ Como Executar e Gerar o Executável em 1 Clique
 
-Basta dar **duplo clique** no arquivo executável ou no script batch na raiz do repositório:
+Na raiz do projeto existem scripts práticos para você:
 
-- 🟢 **`Iniciar-BloatynosyPro.bat`** (ou **`run.bat`**)
+- 🛠️ **`Gerar-Executavel.bat`**: Compila e publica a versão **Release de alta performance (sem debugger)** diretamente na pasta `Executavel\BloatynosyPro.exe`. É a versão mais rápida e leve!
+- 🟢 **`Iniciar-BloatynosyPro.bat`** (ou **`run.bat`**): Inicia a aplicação instantaneamente. Se ainda não tiver sido compilada, ele gera e abre automaticamente.
   - *Dica:* Para aplicar regras que afetam todo o sistema (`HKLM`) e remover bloatwares nativos com permissão total, clique com o botão direito e selecione **"Executar como Administrador"**.
-
-Ou abra diretamente o executável já compilado:
-```
-./src/BloatynosyPro/bin/Release/net9.0-windows/BloatynosyPro.exe
-```
 
 ---
 

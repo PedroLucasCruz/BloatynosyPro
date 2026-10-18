@@ -1,6 +1,8 @@
 ﻿## Build and output
 bin/
 obj/
+Executavel/
+publish/
 *.user
 *.suo
 *.userosscache

@@ -15,21 +15,20 @@ if %errorlevel% neq 0 (
     echo.
 )
 
-set EXE_PATH=src\BloatynosyPro\bin\Release\net9.0-windows\BloatynosyPro.exe
-
-if exist "%EXE_PATH%" (
-    echo [OK] Executavel encontrado! Abrindo BloatynosyPro...
-    start "" "%EXE_PATH%"
+:: 1. Tenta abrir a versao publicada de alta performance
+if exist "Executavel\BloatynosyPro.exe" (
+    echo [OK] Abrindo versao otimizada (Release)...
+    start "" "Executavel\BloatynosyPro.exe"
     exit /b 0
 )
 
-echo [INFO] Compilando o projeto pela primeira vez (Release)...
-dotnet build src\BloatynosyPro\BloatynosyPro.csproj -c Release
-
-if %errorlevel% equ 0 (
-    echo [OK] Compilacao concluida com sucesso!
-    start "" "%EXE_PATH%"
-) else (
-    echo [ERRO] Falha ao compilar. Verifique se o .NET 9 SDK esta instalado.
-    pause
+:: 2. Tenta abrir a versao compilada em bin
+if exist "src\BloatynosyPro\bin\Release\net9.0-windows\BloatynosyPro.exe" (
+    echo [OK] Abrindo executavel...
+    start "" "src\BloatynosyPro\bin\Release\net9.0-windows\BloatynosyPro.exe"
+    exit /b 0
 )
+
+:: 3. Se nao existir nenhum, chama o gerador
+echo [INFO] Executavel ainda nao gerado. Compilando agora...
+call Gerar-Executavel.bat
